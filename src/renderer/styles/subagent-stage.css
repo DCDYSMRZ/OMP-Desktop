@@ -1,0 +1,52 @@
+.agent-stage { position: relative; isolation: isolate; width: 100%; box-sizing: border-box; align-self: stretch; margin: 12px 0; padding: 0; min-width: 0; container-type: inline-size; }
+.agent-stage-header { position: relative; z-index: 1; width: 100%; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 0 0 12px; text-align: left; color: var(--ds-text-primary); background: transparent; border: 0; cursor: pointer; }
+.agent-stage-spring { display: inline-flex; width: 16px; height: 16px; flex: none; }
+.agent-stage-header-copy { min-width: 0; flex: 1; display: flex; align-items: baseline; gap: 10px; overflow: hidden; }
+.agent-stage-header-copy strong { flex: none; font-size: 13px; line-height: 16px; font-weight: 600; }
+.agent-stage-summary { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; color: var(--ds-text-secondary); }
+.agent-stage-summary, .agent-stage-elapsed, .liquid-stage-meta { font-variant-numeric: tabular-nums; }
+.agent-stage-elapsed { flex: none; white-space: nowrap; font-size: 11.5px; color: var(--ds-text-secondary); }
+.agent-stage-caret { flex-shrink: 0; transition: transform 220ms var(--lg-ease-out); }
+.agent-stage-header[aria-expanded="true"] .agent-stage-caret { transform: rotate(90deg); }
+.agent-stage-reveal { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 420ms var(--lg-ease-out), opacity 220ms; }
+.agent-stage-reveal.is-open { grid-template-rows: 1fr; opacity: 1; }
+.agent-stage-reveal > div { min-height: 0; overflow: clip; overflow-clip-margin: 10px; }
+.liquid-stage { position: relative; width: 100%; isolation: isolate; }
+.liquid-stage-field { position: absolute; inset: 0; overflow: visible; pointer-events: none; z-index: 0; }
+.agent-slab.liuli { position: absolute; z-index: 1; display: block; padding: 0; text-align: left; color: var(--ds-text-primary); cursor: pointer; box-sizing: border-box; }
+.agent-slab:is(:focus-visible, [data-emphasis="hover"]) { --liuli-caustic-y: 18px; --liuli-caustic-blur: 34px; transform: translateY(-2px); background-position: 10% 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+.agent-slab[data-emphasis="dim"] { opacity: .4; }
+.agent-slab:disabled { cursor: default; }
+.liquid-stage-bead { position: absolute; z-index: 1; left: 12px; top: calc((100% - 12px - var(--capsule-floor-gap) + var(--capsule-text-top)) / 2); transform: translateY(-50%); display: inline-flex; align-items: center; justify-content: center; }
+.liquid-stage-copy { position: absolute; inset: 0; z-index: 1; min-width: 0; display: flex; flex-direction: column; box-sizing: border-box; padding: var(--capsule-text-top) 14px 0 46px; }
+.liquid-stage-heading { display: flex; align-items: center; gap: 6px; min-width: 0; height: var(--capsule-title-height); line-height: var(--capsule-title-height); }
+.liquid-stage-heading strong { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 560; color: var(--ds-text-primary); }
+.agent-stage-role { flex: none; max-width: 30%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 1px 7px; color: var(--ds-text-secondary); font-size: 11px; line-height: 14px; font-family: var(--font-mono, monospace); }
+.liquid-stage-meta, .agent-stage-activity, .agent-stage-error { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; line-height: 16px; }
+.liquid-stage-copy > :is(.liquid-stage-meta, .agent-stage-activity) { margin-top: var(--capsule-detail-gap); height: 16px; }
+.liquid-stage-meta, .agent-stage-activity { color: var(--ds-text-secondary); }
+.agent-slab :is(.liquid-stage-meta, .agent-stage-activity, .agent-stage-elapsed, .agent-stage-role) { color: rgba(255,255,255,.78); }
+:root[data-theme="light"] .agent-slab :is(.liquid-stage-meta, .agent-stage-activity, .agent-stage-elapsed, .agent-stage-role) { color: #344454; }
+.agent-stage-activity { display: grid; overflow: hidden; }
+.liquid-stage-activity-current, .liquid-stage-activity-outgoing { grid-area: 1 / 1; min-width: 0; display: block; overflow: hidden; text-overflow: ellipsis; }
+.liquid-stage-activity-current.is-entering { animation: liquid-activity-in 200ms ease-out 60ms both; }
+.liquid-stage-activity-outgoing { pointer-events: none; animation: liquid-activity-out 160ms ease-out both; }
+.agent-stage-error, .agent-stage-failure { color: var(--ds-error); }
+.agent-stage-error { height: 16px; margin-top: 2px; }
+.agent-slab[data-phase="aborted"] .agent-stage-error { color: var(--ds-warning); }
+.liquid-stage-chevron { flex: none; color: var(--ds-text-muted); opacity: 0; transition: opacity 150ms; }
+.agent-slab:is(:hover, :focus-visible, [data-emphasis="hover"]) .liquid-stage-chevron { opacity: 1; }
+.agent-slab.is-bundle[aria-expanded="true"] .liquid-stage-chevron { transform: rotate(90deg); }
+.agent-slab.is-bundle strong { color: inherit; font-size: 12px; font-weight: 500; }
+.agent-stage-failure, .agent-stage-empty { margin: 8px 0; font-size: 12px; overflow-wrap: anywhere; }
+.agent-stage-empty { color: var(--ds-text-muted); }
+.agent-stage-raw { margin-top: 6px; padding: 0; border: 0; background: transparent; font-size: 11.5px; color: var(--ds-text-muted); }
+.agent-stage-raw > summary { width: fit-content; cursor: pointer; padding: 2px 4px; border-radius: 8px; font-size: 11.5px; }
+.agent-stage-raw > summary:hover { background: var(--ds-bg-hover); }
+.agent-stage-raw[open] > summary { margin-bottom: 8px; }
+.agent-stage :is(button, summary):focus-visible { outline: 2px solid color-mix(in oklab, var(--liq-mid) 55%, transparent); outline-offset: 2px; }
+.agent-stage.is-offscreen *, .liquid-stage.is-offscreen * { animation-play-state: paused !important; }
+@keyframes liquid-activity-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes liquid-activity-out { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-5px); } }
+@media (prefers-reduced-motion: reduce) { .agent-stage, .agent-stage *, .agent-stage-activity > * { animation: none !important; transition: none !important; } .liquid-stage-activity-outgoing { display: none; } .agent-slab:is(:hover, :focus-visible, [data-emphasis="hover"]) { transform: none; } }
+@media (prefers-reduced-transparency: reduce) { .agent-stage-role { background: var(--ds-bg-elevated-opaque); backdrop-filter: none; -webkit-backdrop-filter: none; } }

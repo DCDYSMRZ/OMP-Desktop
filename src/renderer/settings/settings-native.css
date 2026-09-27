@@ -1,0 +1,42 @@
+/* Native omp controls extend the retained PI-Desktop settings shell, cards and rows. */
+.native-settings-note { padding: 14px 16px; border: 0.5px solid var(--lg-stroke); border-radius: var(--lg-radius-control); background: var(--lg-canvas); color: var(--ds-text-secondary); font-size: var(--text-sm); line-height: 1.6; overflow-wrap: anywhere; }
+.native-settings-note p { margin: 0 0 10px; }
+.native-settings-note p:last-child { margin-bottom: 0; }
+.native-settings-note dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 12px 0; }
+.native-settings-note dt { color: var(--ds-text-muted); }
+.native-settings-note dd { margin: 0; }
+.native-setting { border-bottom: 0.5px solid var(--lg-stroke); }
+.native-setting:last-child { border-bottom: 0; }
+.native-setting > .settings-row { border-bottom: 0; align-items: flex-start; }
+.native-setting .settings-row-copy { min-width: 0; flex: 1 1 42%; }
+.native-setting .settings-row-title { overflow-wrap: anywhere; }
+.native-setting .settings-row-detail { display: grid; gap: 5px; overflow-wrap: anywhere; }
+.native-setting .settings-row-detail code { white-space: pre-wrap; display: block; max-height: 140px; overflow: auto; font-size: var(--text-xs); }
+.native-setting-type { font-family: var(--font-mono); color: var(--ds-text-muted); font-size: var(--text-xs); }
+.native-setting .settings-row-control { flex: 1 1 54%; min-width: 0; width: auto; }
+.native-setting-form { display: grid; gap: 8px; width: 100%; min-width: 0; }
+.native-setting-form .field-textarea { width: 100%; min-height: 104px; resize: vertical; font-family: var(--font-mono); }
+.native-setting-form .field-input, .native-setting-form .field-select { width: 100%; min-width: 0; }
+.native-setting-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
+.native-desktop-field { display: flex; align-items: center; gap: 8px; max-width: 340px; width: 100%; }
+.native-desktop-field .field-input { min-width: 0; flex: 1; }
+.native-setting-muted { color: var(--ds-text-muted); font-size: var(--text-xs); line-height: 1.5; }
+.native-setting-message { padding: 0 16px 12px; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; color: var(--ds-text-secondary); }
+.native-setting-error { color: var(--ds-danger, #c54a4a); white-space: pre-wrap; }
+.native-reset-confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px; border: 0.5px solid var(--lg-stroke); border-radius: var(--lg-radius-control); font-size: var(--text-xs); }
+.native-reset-confirm > span { width: 100%; }
+.native-setting-group { margin-top: 10px; }
+.native-group-toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border-radius: var(--radius-sm); padding: 12px 8px; text-align: left; color: var(--ds-text-primary); font-weight: 550; }
+.native-group-toggle:hover { background: var(--ds-bg-hover); }
+.native-group-toggle:focus-visible { outline: 2px solid color-mix(in oklab, var(--liq-mid) 55%, transparent); outline-offset: 2px; }
+.native-group-toggle > span:last-child { color: var(--ds-text-muted); font-size: var(--text-xs); }
+.native-settings-empty { padding: 16px; color: var(--ds-text-muted); }
+.native-model-list { margin-top: 10px; }
+.native-model-list summary { cursor: pointer; }
+.native-model-list ul { max-height: 220px; overflow: auto; padding-left: 20px; }
+.native-settings-legal { color: var(--ds-text-muted); font-size: var(--text-xs); line-height: 1.7; margin-top: 12px; }
+@media (max-width: 860px) {
+  .native-setting > .settings-row { flex-direction: column; gap: 12px; align-items: stretch; }
+  .native-setting .settings-row-control { width: 100%; }
+  .native-settings-note dl { grid-template-columns: 1fr; }
+}

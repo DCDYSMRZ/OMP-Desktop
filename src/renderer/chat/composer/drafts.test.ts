@@ -1,0 +1,70 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { ComposerDraft, getComposerDraft, type Draft } from './drafts';
+
+const draft: Draft = { text: 'Please inspect this file', references: [{ id: 'ref', sessionId: 'logical', path: 'file.txt', name: 'file.txt', kind: 'file', token: '\ue001' }], attachments: [{ id: 'attachment', name: 'image.png', path: '/selected/image.png', source: 'disk', expiresAt: 2000000000000, size: 10, kind: 'image' }] };
+test('a logical composer restores text, references, attachments and error after runtime adoption and remount', async () => {
+  const logicalKey = 'adoption-regression';
+  const home = getComposerDraft(logicalKey);
+  home.setDraft(draft);
+  let rejectSend!: (error: Error) => void;
+  const pendingSend = new Promise<void>((_resolve, reject) => { rejectSend = reject; });
+  const operation = home.submit(() => pendingSend);
+  const adoptedView = getComposerDraft(logicalKey);
+  assert.equal(adoptedView.getSnapshot().busy, true);
+  assert.deepEqual(adoptedView.draft, draft);
+  rejectSend(new Error('Native prompt rejected'));
+  await operation;
+  assert.deepEqual(adoptedView.getSnapshot(), { draft, busy: false, error: 'Error: Native prompt rejected' });
+  assert.deepEqual(getComposerDraft(logicalKey).draft.attachments, draft.attachments);
+});
+test('failure does not erase a newer draft typed while the original send is pending', async () => {
+  const store = new ComposerDraft();
+  store.setDraft(draft);
+  let rejectSend!: (error: Error) => void;
+  const pending = new Promise<void>((_resolve, reject) => { rejectSend = reject; });
+  const operation = store.submit(() => pending);
+  const newer: Draft = { text: 'A different follow-up', attachments: [], references: [] };
+  store.setDraft(newer);
+  rejectSend(new Error('Rejected'));
+  await operation;
+  assert.deepEqual(store.getSnapshot(), { draft: newer, busy: false, error: 'Error: Rejected' });
+});
+test('successful submission clears only the submitted draft and another logical session stays isolated', async () => {
+  const first = new ComposerDraft(), second = new ComposerDraft();
+  first.setDraft(draft); second.setDraft({ text: 'Other session', references: [], attachments: [] });
+  let finish!: () => void;
+  const pending = new Promise<void>(resolve => { finish = resolve; });
+  const operation = first.submit(() => pending);
+  first.setDraft({ text: 'Next prompt', references: [], attachments: [] });
+  finish(); await operation;
+  assert.equal(first.draft.text, 'Next prompt');
+  assert.equal(first.getSnapshot().error, '');
+  assert.equal(first.getSnapshot().busy, false);
+  assert.equal(second.draft.text, 'Other session');
+});
+test('accepted attachments leave a newer draft without consuming its new attachments', async () => {
+  const store = new ComposerDraft();
+  store.setDraft(draft);
+  let finish!: () => void;
+  const operation = store.submit(() => new Promise<void>(resolve => { finish = resolve; }));
+  const added = { ...draft.attachments[0], id: 'new-attachment' };
+  store.setDraft({ ...store.draft, text: 'Edited while waiting', attachments: [...store.draft.attachments, added] });
+  finish(); await operation;
+  assert.deepEqual(store.draft, { text: 'Edited while waiting', references: draft.references, attachments: [added] });
+});
+test('fork handoff moves the latest composition without leaving attachment aliases in the original', () => {
+  const source = new ComposerDraft(), fork = new ComposerDraft();
+  source.setDraft(draft);
+  const newer = { ...draft, text: 'Edited during fork startup' };
+  source.setDraft(newer);
+  source.moveTo(fork, 'fork-startup-editor');
+  fork.applyEditor('fork-startup-editor', 'Old native editor text');
+  assert.deepEqual(fork.draft, newer);
+  assert.deepEqual(source.draft, { text: '', references: [], attachments: [] });
+  source.setDraft({ text: 'Back in the original', references: [], attachments: [] });
+  assert.deepEqual(fork.draft, newer);
+  fork.applyEditor('later-editor-command', 'New explicit editor text');
+  assert.equal(fork.draft.text, 'New explicit editor text');
+  assert.deepEqual(fork.draft.attachments, newer.attachments);
+});

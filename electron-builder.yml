@@ -1,0 +1,23 @@
+appId: local.omp.desktop
+productName: OMP-Desktop
+asar: true
+npmRebuild: false
+forceCodeSigning: false
+directories:
+  output: release
+files:
+  - out/**/*
+  - package.json
+  - LICENSE
+  - THIRD_PARTY_NOTICES.md
+  - licenses/**/*
+mac:
+  icon: build/icon.icns
+  identity: null
+  category: public.app-category.developer-tools
+  hardenedRuntime: false
+  notarize: false
+win:
+  signAndEditExecutable: false
+linux:
+  category: Development

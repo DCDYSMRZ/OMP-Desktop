@@ -1,0 +1,3316 @@
+[
+  {
+    "name": "@antfu/install-pkg",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/antfu-collective/install-pkg.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@babel/runtime",
+    "version": "7.29.7",
+    "license": "MIT",
+    "author": "The Babel Team (https://babel.dev/team)",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/babel/babel.git",
+      "directory": "packages/babel-runtime"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@braintree/sanitize-url",
+    "version": "7.1.2",
+    "license": "MIT",
+    "author": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/braintree/sanitize-url.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@chevrotain/types",
+    "version": "11.1.2",
+    "license": "Apache-2.0",
+    "author": {
+      "name": "Shahar Soel"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/Chevrotain/chevrotain.git"
+    },
+    "noticeFiles": [
+      "LICENSE.txt"
+    ]
+  },
+  {
+    "name": "@iconify/types",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Vjacheslav Trushkin",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/iconify/iconify.git",
+      "directory": "packages/types"
+    },
+    "noticeFiles": [
+      "license.txt"
+    ]
+  },
+  {
+    "name": "@iconify/utils",
+    "version": "3.1.7",
+    "license": "MIT",
+    "author": "Vjacheslav Trushkin",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/iconify/iconify.git",
+      "directory": "packages/utils"
+    },
+    "noticeFiles": [
+      "license.txt"
+    ]
+  },
+  {
+    "name": "@mermaid-js/parser",
+    "version": "1.2.1",
+    "license": "MIT",
+    "author": "Yokozuna59",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mermaid-js/mermaid.git",
+      "directory": "packages/parser"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/core",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Pine Wu <octref@gmail.com>; Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/core"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/engine-javascript",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/engine-javascript"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/engine-oniguruma",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/engine-oniguruma"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/langs",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/langs"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/primitive",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/primitive"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/themes",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/themes"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/types",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/types"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@shikijs/vscode-textmate",
+    "version": "10.0.2",
+    "license": "MIT",
+    "author": {
+      "name": "Microsoft Corporation"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/shikijs/vscode-textmate"
+    },
+    "noticeFiles": [
+      "LICENSE.md"
+    ]
+  },
+  {
+    "name": "@types/d3",
+    "version": "7.4.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-array",
+    "version": "3.2.2",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-array"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-axis",
+    "version": "3.0.6",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-axis"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-brush",
+    "version": "3.0.6",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-brush"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-chord",
+    "version": "3.0.6",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-chord"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-color",
+    "version": "3.1.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-color"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-contour",
+    "version": "3.0.6",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-contour"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-delaunay",
+    "version": "6.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-delaunay"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-dispatch",
+    "version": "3.0.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-dispatch"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-drag",
+    "version": "3.0.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-drag"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-dsv",
+    "version": "3.0.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-dsv"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-ease",
+    "version": "3.0.2",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-ease"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-fetch",
+    "version": "3.0.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-fetch"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-force",
+    "version": "3.0.10",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-force"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-format",
+    "version": "3.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-format"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-geo",
+    "version": "3.1.1",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-geo"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-hierarchy",
+    "version": "3.1.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-hierarchy"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-interpolate",
+    "version": "3.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-interpolate"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-path",
+    "version": "3.1.1",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-path"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-polygon",
+    "version": "3.0.2",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-polygon"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-quadtree",
+    "version": "3.0.6",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-quadtree"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-random",
+    "version": "3.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-random"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-scale",
+    "version": "4.0.9",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-scale"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-scale-chromatic",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-scale-chromatic"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-selection",
+    "version": "3.0.12",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-selection"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-shape",
+    "version": "3.2.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-shape"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-time",
+    "version": "3.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-time"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-time-format",
+    "version": "4.0.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-time-format"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-timer",
+    "version": "3.0.2",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-timer"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-transition",
+    "version": "3.0.9",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-transition"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/d3-zoom",
+    "version": "3.0.8",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/d3-zoom"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/debug",
+    "version": "4.1.13",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/debug"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/estree",
+    "version": "1.0.9",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/estree"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/estree-jsx",
+    "version": "1.0.5",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/estree-jsx"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/geojson",
+    "version": "7946.0.16",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/geojson"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/hast",
+    "version": "3.0.5",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/hast"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/katex",
+    "version": "0.16.8",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/katex"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/mdast",
+    "version": "4.0.4",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/mdast"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/ms",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/ms"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/trusted-types",
+    "version": "2.0.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/trusted-types"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/unist",
+    "version": "2.0.11",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/unist"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@types/unist",
+    "version": "3.0.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/DefinitelyTyped/DefinitelyTyped.git",
+      "directory": "types/unist"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@ungap/structured-clone",
+    "version": "1.4.0",
+    "license": "ISC",
+    "author": "Andrea Giammarchi",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ungap/structured-clone.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "@upsetjs/venn.js",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": {
+      "name": "Ben Frederickson",
+      "email": "ben@benfrederickson.com",
+      "url": "https://www.benfrederickson.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/upsetjs/venn.js.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "bail",
+    "version": "2.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/bail",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "ccount",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/ccount",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "character-entities",
+    "version": "2.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/character-entities",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "character-entities-html4",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/character-entities-html4",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "character-entities-legacy",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/character-entities-legacy",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "character-reference-invalid",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/character-reference-invalid",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "comma-separated-tokens",
+    "version": "2.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/comma-separated-tokens",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "commander",
+    "version": "7.2.0",
+    "license": "MIT",
+    "author": "TJ Holowaychuk <tj@vision-media.ca>",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/tj/commander.js.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "commander",
+    "version": "8.3.0",
+    "license": "MIT",
+    "author": "TJ Holowaychuk <tj@vision-media.ca>",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/tj/commander.js.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "cose-base",
+    "version": "1.0.3",
+    "license": "MIT",
+    "author": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/iVis-at-Bilkent/cose-base.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "cose-base",
+    "version": "2.2.0",
+    "license": "MIT",
+    "author": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/iVis-at-Bilkent/cose-base.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "cytoscape",
+    "version": "3.34.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/cytoscape/cytoscape.js.git"
+    },
+    "noticeFiles": [
+      "LICENSE",
+      "license-update.mjs"
+    ]
+  },
+  {
+    "name": "cytoscape-cose-bilkent",
+    "version": "4.1.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/cytoscape/cytoscape.js-cose-bilkent.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "cytoscape-fcose",
+    "version": "2.2.0",
+    "license": "MIT",
+    "author": {
+      "name": "iVis-at-Bilkent"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/iVis-at-Bilkent/cytoscape.js-fcose.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3",
+    "version": "7.9.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-array",
+    "version": "2.12.1",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-array.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-array",
+    "version": "3.2.4",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-array.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-axis",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-axis.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-brush",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-brush.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-chord",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-chord.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-color",
+    "version": "3.1.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-color.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-contour",
+    "version": "4.0.2",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-contour.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-delaunay",
+    "version": "6.0.4",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-delaunay.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-dispatch",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-dispatch.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-drag",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-drag.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-dsv",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-dsv.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-ease",
+    "version": "3.0.1",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-ease.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-fetch",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-fetch.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-force",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-force.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-format",
+    "version": "3.1.2",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-format.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-geo",
+    "version": "3.1.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-geo.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-hierarchy",
+    "version": "3.1.2",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-hierarchy.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-interpolate",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-interpolate.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-path",
+    "version": "1.0.9",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-path.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-path",
+    "version": "3.1.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-path.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-polygon",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-polygon.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-quadtree",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-quadtree.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-random",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-random.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-sankey",
+    "version": "0.12.3",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike/"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-sankey.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-scale",
+    "version": "4.0.2",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-scale.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-scale-chromatic",
+    "version": "3.1.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-scale-chromatic.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-selection",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-selection.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-shape",
+    "version": "1.3.7",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-shape.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-shape",
+    "version": "3.2.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-shape.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-time",
+    "version": "3.1.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-time.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-time-format",
+    "version": "4.1.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-time-format.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-timer",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-timer.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-transition",
+    "version": "3.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-transition.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "d3-zoom",
+    "version": "3.0.0",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/d3/d3-zoom.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "dagre-d3-es",
+    "version": "7.0.14",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/tbo47/dagre-es.git"
+    },
+    "noticeFiles": [
+      "LICENSE.md"
+    ]
+  },
+  {
+    "name": "dayjs",
+    "version": "1.11.23",
+    "license": "MIT",
+    "author": "iamkun",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/iamkun/dayjs.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "debug",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Josh Junon (https://github.com/qix-)",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/debug-js/debug.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "decode-named-character-reference",
+    "version": "1.3.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/decode-named-character-reference",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "delaunator",
+    "version": "5.1.0",
+    "license": "ISC",
+    "author": "Vladimir Agafonkin",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mapbox/delaunator.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "dequal",
+    "version": "2.0.3",
+    "license": "MIT",
+    "author": {
+      "name": "Luke Edwards",
+      "email": "luke.edwards05@gmail.com",
+      "url": "https://lukeed.com"
+    },
+    "repository": "lukeed/dequal",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "devlop",
+    "version": "1.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/devlop",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "dompurify",
+    "version": "3.4.16",
+    "license": "(MPL-2.0 OR Apache-2.0)",
+    "author": "Dr.-Ing. Mario Heiderich, Cure53 <mario@cure53.de> (https://cure53.de/)",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/cure53/DOMPurify.git"
+    },
+    "noticeFiles": [
+      "LICENSE",
+      "LICENSE-MPL"
+    ]
+  },
+  {
+    "name": "entities",
+    "version": "6.0.1",
+    "license": "BSD-2-Clause",
+    "author": "Felix Boehm <me@feedic.com>",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/fb55/entities.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "es-toolkit",
+    "version": "1.52.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/toss/es-toolkit.git"
+    },
+    "noticeFiles": [
+      "LICENSE",
+      "NOTICE"
+    ]
+  },
+  {
+    "name": "escape-string-regexp",
+    "version": "5.0.0",
+    "license": "MIT",
+    "author": {
+      "name": "Sindre Sorhus",
+      "email": "sindresorhus@gmail.com",
+      "url": "https://sindresorhus.com"
+    },
+    "repository": "sindresorhus/escape-string-regexp",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "estree-util-is-identifier-name",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/estree-util-is-identifier-name",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "extend",
+    "version": "3.0.2",
+    "license": "MIT",
+    "author": "Stefan Thomas <justmoon@members.fsf.org> (http://www.justmoon.net)",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/justmoon/node-extend.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "fastdom",
+    "version": "1.0.12",
+    "license": "MIT",
+    "author": {
+      "name": "Wilson Page",
+      "email": "wilsonpage@me.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/wilsonpage/fastdom.git"
+    },
+    "noticeFiles": []
+  },
+  {
+    "name": "hachure-fill",
+    "version": "0.5.2",
+    "license": "MIT",
+    "author": "Preet Shihn",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pshihn/hachure-fill.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "hast-util-from-dom",
+    "version": "5.0.1",
+    "license": "ISC",
+    "author": "Keith McKnight <keith@mcknig.ht> (https://keith.mcknig.ht)",
+    "repository": "syntax-tree/hast-util-from-dom",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-from-html",
+    "version": "2.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-from-html",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-from-html-isomorphic",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Remco Haszing <remcohaszing@gmail.com>",
+    "repository": "syntax-tree/hast-util-from-html-isomorphic",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-from-parse5",
+    "version": "8.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-from-parse5",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-is-element",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-is-element",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-parse-selector",
+    "version": "4.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-parse-selector",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-raw",
+    "version": "9.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-raw",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-sanitize",
+    "version": "5.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-sanitize",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-to-html",
+    "version": "9.0.5",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-to-html",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-to-jsx-runtime",
+    "version": "2.3.6",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-to-jsx-runtime",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-to-parse5",
+    "version": "8.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-to-parse5",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-to-text",
+    "version": "4.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-to-text",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hast-util-whitespace",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hast-util-whitespace",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "hastscript",
+    "version": "9.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/hastscript",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "html-parse-stringify",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": "Henrik Joreteg <henrik@joreteg.com>",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/henrikjoreteg/html-parse-stringify"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "html-url-attributes",
+    "version": "3.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/rehypejs/rehype-minify/tree/main/packages/html-url-attributes",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "html-void-elements",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/html-void-elements",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "i18next",
+    "version": "26.4.2",
+    "license": "MIT",
+    "author": "Jan Mühlemann <jan.muehlemann@gmail.com> (https://github.com/jamuhl)",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/i18next/i18next.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "iconv-lite",
+    "version": "0.6.3",
+    "license": "MIT",
+    "author": "Alexander Shtuchkin <ashtuchkin@gmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/ashtuchkin/iconv-lite.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "import-meta-resolve",
+    "version": "4.2.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/import-meta-resolve",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "inline-style-parser",
+    "version": "0.2.7",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/remarkablemark/inline-style-parser.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "internmap",
+    "version": "1.0.1",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mbostock/internmap.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "internmap",
+    "version": "2.0.3",
+    "license": "ISC",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "https://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mbostock/internmap.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "is-alphabetical",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/is-alphabetical",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "is-alphanumerical",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/is-alphanumerical",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "is-decimal",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/is-decimal",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "is-hexadecimal",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/is-hexadecimal",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "is-plain-obj",
+    "version": "4.1.0",
+    "license": "MIT",
+    "author": {
+      "name": "Sindre Sorhus",
+      "email": "sindresorhus@gmail.com",
+      "url": "https://sindresorhus.com"
+    },
+    "repository": "sindresorhus/is-plain-obj",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "katex",
+    "version": "0.16.47",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/KaTeX/KaTeX.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "khroma",
+    "version": "2.1.0",
+    "license": null,
+    "author": null,
+    "repository": "github:fabiospampinato/khroma",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "layout-base",
+    "version": "1.0.2",
+    "license": "MIT",
+    "author": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/iVis-at-Bilkent/layout-base.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "layout-base",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/iVis-at-Bilkent/layout-base.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "lodash-es",
+    "version": "4.18.1",
+    "license": "MIT",
+    "author": "John-David Dalton <john.david.dalton@gmail.com>",
+    "repository": "lodash/lodash",
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "longest-streak",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/longest-streak",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "lucide-react",
+    "version": "1.48.0",
+    "license": "ISC",
+    "author": "Eric Fennis",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/lucide-icons/lucide.git",
+      "directory": "packages/lucide-react"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "markdown-table",
+    "version": "3.0.4",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/markdown-table",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "marked",
+    "version": "16.4.2",
+    "license": "MIT",
+    "author": "Christopher Jeffrey",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/markedjs/marked.git"
+    },
+    "noticeFiles": [
+      "LICENSE.md"
+    ]
+  },
+  {
+    "name": "mdast-util-find-and-replace",
+    "version": "3.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-find-and-replace",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-from-markdown",
+    "version": "2.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-from-markdown",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm-autolink-literal",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm-autolink-literal",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm-footnote",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm-footnote",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm-strikethrough",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm-strikethrough",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm-table",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm-table",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-gfm-task-list-item",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-gfm-task-list-item",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-math",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-math",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-mdx-expression",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-mdx-expression",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-mdx-jsx",
+    "version": "3.2.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-mdx-jsx",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-mdxjs-esm",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-mdxjs-esm",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-phrasing",
+    "version": "4.1.0",
+    "license": "MIT",
+    "author": "Victor Felder <victor@draft.li> (https://draft.li)",
+    "repository": "syntax-tree/mdast-util-phrasing",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-to-hast",
+    "version": "13.2.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-to-hast",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-to-markdown",
+    "version": "2.1.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-to-markdown",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mdast-util-to-string",
+    "version": "4.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/mdast-util-to-string",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "mermaid",
+    "version": "11.17.2",
+    "license": "MIT",
+    "author": "Knut Sveidqvist",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mermaid-js/mermaid"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "micromark",
+    "version": "4.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-core-commonmark",
+    "version": "2.0.4",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-core-commonmark",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm",
+    "version": "3.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-autolink-literal",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-autolink-literal",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-footnote",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-footnote",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-strikethrough",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-strikethrough",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-table",
+    "version": "2.1.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-table",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-tagfilter",
+    "version": "2.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-tagfilter",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-gfm-task-list-item",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-gfm-task-list-item",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-extension-math",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "micromark/micromark-extension-math",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-factory-destination",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-factory-destination",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-factory-label",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-factory-label",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-factory-space",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-factory-space",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-factory-title",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-factory-title",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-factory-whitespace",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-factory-whitespace",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-character",
+    "version": "2.1.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-character",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-chunked",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-chunked",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-classify-character",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-classify-character",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-combine-extensions",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-combine-extensions",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-decode-numeric-character-reference",
+    "version": "2.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-decode-numeric-character-reference",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-decode-string",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-decode-string",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-edit-map",
+    "version": "1.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-edit-map",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-encode",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-encode",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-html-tag-name",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-html-tag-name",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-normalize-identifier",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-normalize-identifier",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-resolve-all",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-resolve-all",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-sanitize-uri",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-sanitize-uri",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-subtokenize",
+    "version": "2.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-subtokenize",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-symbol",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-symbol",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "micromark-util-types",
+    "version": "2.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/micromark/micromark/tree/main/packages/micromark-util-types",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "ms",
+    "version": "2.1.3",
+    "license": "MIT",
+    "author": null,
+    "repository": "vercel/ms",
+    "noticeFiles": [
+      "license.md"
+    ]
+  },
+  {
+    "name": "oniguruma-parser",
+    "version": "0.12.2",
+    "license": "MIT",
+    "author": "Steven Levithan",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/slevithan/oniguruma-parser.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "oniguruma-to-es",
+    "version": "4.3.6",
+    "license": "MIT",
+    "author": "Steven Levithan",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/slevithan/oniguruma-to-es.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "package-manager-detector",
+    "version": "1.8.0",
+    "license": "MIT",
+    "author": "Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/antfu-collective/package-manager-detector.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "parse-entities",
+    "version": "4.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/parse-entities",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "parse5",
+    "version": "7.3.0",
+    "license": "MIT",
+    "author": "Ivan Nikulin <ifaaan@gmail.com> (https://github.com/inikulin)",
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/inikulin/parse5.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "path-data-parser",
+    "version": "0.1.0",
+    "license": "MIT",
+    "author": "Preet Shihn",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pshihn/path-data-parser.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "pinyin-pro",
+    "version": "3.29.1",
+    "license": "MIT",
+    "author": "zh-lx",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/zh-lx/pinyin-pro.git",
+      "directory": "packages/pinyin-pro"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "points-on-curve",
+    "version": "0.2.0",
+    "license": "MIT",
+    "author": "Preet Shihn",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pshihn/bezier-points.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "points-on-path",
+    "version": "0.2.1",
+    "license": "MIT",
+    "author": "Preet Shihn",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pshihn/points-on-path.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "property-information",
+    "version": "7.2.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/property-information",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "react",
+    "version": "19.3.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/react/react.git",
+      "directory": "packages/react"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "react-dom",
+    "version": "19.3.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/react/react.git",
+      "directory": "packages/react-dom"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "react-i18next",
+    "version": "15.7.4",
+    "license": "MIT",
+    "author": "Jan Mühlemann <jan.muehlemann@gmail.com> (https://github.com/jamuhl)",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/i18next/react-i18next.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "react-markdown",
+    "version": "10.1.0",
+    "license": "MIT",
+    "author": "Espen Hovlandsdal <espen@hovlandsdal.com>",
+    "repository": "remarkjs/react-markdown",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "regex",
+    "version": "6.1.0",
+    "license": "MIT",
+    "author": "Steven Levithan",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/slevithan/regex.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "regex-recursion",
+    "version": "6.0.2",
+    "license": "MIT",
+    "author": "Steven Levithan",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/slevithan/regex-recursion.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "regex-utilities",
+    "version": "2.3.0",
+    "license": "MIT",
+    "author": "Steven Levithan",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/slevithan/regex-utilities.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "rehype-katex",
+    "version": "7.0.1",
+    "license": "MIT",
+    "author": "Junyoung Choi <fluke8259@gmail.com> (https://rokt33r.github.io)",
+    "repository": "https://github.com/remarkjs/remark-math/tree/main/packages/rehype-katex",
+    "noticeFiles": []
+  },
+  {
+    "name": "rehype-raw",
+    "version": "7.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "rehypejs/rehype-raw",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "rehype-sanitize",
+    "version": "6.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "rehypejs/rehype-sanitize",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "remark-gfm",
+    "version": "4.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "remarkjs/remark-gfm",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "remark-math",
+    "version": "6.0.0",
+    "license": "MIT",
+    "author": "Junyoung Choi <fluke8259@gmail.com> (https://rokt33r.github.io)",
+    "repository": "https://github.com/remarkjs/remark-math/tree/main/packages/remark-math",
+    "noticeFiles": []
+  },
+  {
+    "name": "remark-parse",
+    "version": "11.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/remarkjs/remark/tree/main/packages/remark-parse",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "remark-rehype",
+    "version": "11.1.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "remarkjs/remark-rehype",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "remark-stringify",
+    "version": "11.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "https://github.com/remarkjs/remark/tree/main/packages/remark-stringify",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "robust-predicates",
+    "version": "3.0.3",
+    "license": "Unlicense",
+    "author": "Vladimir Agafonkin",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/mourner/robust-predicates.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "roughjs",
+    "version": "4.6.6",
+    "license": "MIT",
+    "author": "Preet Shihn <preetshihn@gmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pshihn/rough.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "rw",
+    "version": "1.3.3",
+    "license": "BSD-3-Clause",
+    "author": {
+      "name": "Mike Bostock",
+      "url": "http://bost.ocks.org/mike"
+    },
+    "repository": {
+      "type": "git",
+      "url": "http://github.com/mbostock/rw.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "safer-buffer",
+    "version": "2.1.2",
+    "license": "MIT",
+    "author": {
+      "name": "Nikita Skovoroda",
+      "email": "chalkerx@gmail.com",
+      "url": "https://github.com/ChALkeR"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ChALkeR/safer-buffer.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "scheduler",
+    "version": "0.28.0",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/react/react.git",
+      "directory": "packages/scheduler"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "shiki",
+    "version": "4.4.3",
+    "license": "MIT",
+    "author": "Pine Wu <octref@gmail.com>; Anthony Fu <anthonyfu117@hotmail.com>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/shikijs/shiki.git",
+      "directory": "packages/shiki"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "space-separated-tokens",
+    "version": "2.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/space-separated-tokens",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "strictdom",
+    "version": "1.0.1",
+    "license": "MIT",
+    "author": {
+      "name": "Wilson Page",
+      "email": "wilsonpage@me.com"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git://github.com/wilsonpage/strictdom.git"
+    },
+    "noticeFiles": []
+  },
+  {
+    "name": "stringify-entities",
+    "version": "4.0.4",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/stringify-entities",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "style-to-js",
+    "version": "1.1.21",
+    "license": "MIT",
+    "author": "Mark <mark@remarkablemark.org>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/remarkablemark/style-to-js.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "style-to-object",
+    "version": "1.0.14",
+    "license": "MIT",
+    "author": "Mark <mark@remarkablemark.org>",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/remarkablemark/style-to-object.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "stylis",
+    "version": "4.4.0",
+    "license": "MIT",
+    "author": "Sultan Tarimo <sultantarimo@me.com>",
+    "repository": "https://github.com/thysultan/stylis.js",
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "tailwindcss",
+    "version": "4.3.3",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/tailwindlabs/tailwindcss.git",
+      "directory": "packages/tailwindcss"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "tinyexec",
+    "version": "1.3.1",
+    "license": "MIT",
+    "author": "James Garbutt (https://github.com/43081j)",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/tinylibs/tinyexec.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "trim-lines",
+    "version": "3.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/trim-lines",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "trough",
+    "version": "2.2.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/trough",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "ts-dedent",
+    "version": "2.3.0",
+    "license": "MIT",
+    "author": "Tamino Martinius <dev@zaku.eu>",
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/tamino-martinius/node-ts-dedent.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "unified",
+    "version": "11.0.5",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "unifiedjs/unified",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-find-after",
+    "version": "5.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-find-after",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-is",
+    "version": "6.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-is",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-position",
+    "version": "5.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-position",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-remove-position",
+    "version": "5.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-remove-position",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-stringify-position",
+    "version": "4.0.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-stringify-position",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-visit",
+    "version": "5.1.0",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-visit",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "unist-util-visit-parents",
+    "version": "6.0.2",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "syntax-tree/unist-util-visit-parents",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "uuid",
+    "version": "14.0.2",
+    "license": "MIT",
+    "author": null,
+    "repository": {
+      "type": "git",
+      "url": "https://github.com/uuidjs/uuid.git"
+    },
+    "noticeFiles": [
+      "LICENSE.md"
+    ]
+  },
+  {
+    "name": "vfile",
+    "version": "6.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "vfile/vfile",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "vfile-location",
+    "version": "5.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "vfile/vfile-location",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "vfile-message",
+    "version": "4.0.3",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "vfile/vfile-message",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "void-elements",
+    "version": "3.1.0",
+    "license": "MIT",
+    "author": "hemanth.hm",
+    "repository": "pugjs/void-elements",
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "web-namespaces",
+    "version": "2.0.1",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/web-namespaces",
+    "noticeFiles": [
+      "license"
+    ]
+  },
+  {
+    "name": "zustand",
+    "version": "5.0.15",
+    "license": "MIT",
+    "author": "Paul Henschel",
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/pmndrs/zustand.git"
+    },
+    "noticeFiles": [
+      "LICENSE"
+    ]
+  },
+  {
+    "name": "zwitch",
+    "version": "2.0.4",
+    "license": "MIT",
+    "author": "Titus Wormer <tituswormer@gmail.com> (https://wooorm.com)",
+    "repository": "wooorm/zwitch",
+    "noticeFiles": [
+      "license"
+    ]
+  }
+]
