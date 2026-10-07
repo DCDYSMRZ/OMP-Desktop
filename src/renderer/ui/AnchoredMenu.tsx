@@ -12,6 +12,7 @@
  * would flash at the viewport origin.
  */
 import {
+  useContext,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -20,8 +21,9 @@ import {
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
-import { useGlassExit } from "../lib/portal-visibility";
+import { PortalVisibilityContext, portalToBody, canRestoreFocus } from "../lib/portal-visibility";
+import { useSurfacePresence } from './ui';
+import { useSurfaceMotion } from './motion';
 
 const MARGIN = 8;
 const GAP = 6;
@@ -61,7 +63,7 @@ export type AnchoredMenuProps = {
 };
 
 export function AnchoredMenu({
-  open,
+  open: requestedOpen,
   onClose,
   trigger,
   anchorRef,
@@ -77,35 +79,44 @@ export function AnchoredMenu({
   onMenuKeyDown,
   restoreFocus = true,
 }: AnchoredMenuProps) {
+  const visible = useContext(PortalVisibilityContext);
+  const open = requestedOpen && visible;
+  const { present, leaving } = useSurfacePresence(open);
+  const lastChildren = useRef(children);
+  if (open) lastChildren.current = children;
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  useGlassExit(menuRef, open);
   const [position, setPosition] = useState<{
     top: number;
     left: number;
     width?: number;
   } | null>(null);
+  const origin = useRef('center top');
+  useSurfaceMotion(menuRef, open, 'scale', !!position);
 
   useEffect(() => {
-    if (!open) setPosition(null);
-  }, [open]);
+    if (!present) setPosition(null);
+  }, [present]);
+  useEffect(() => { if (!visible && requestedOpen) onClose(); }, [visible, requestedOpen, onClose]);
 
   /* Closing returns focus to the trigger so Tab order does not jump to <body>. */
   const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (present) {
       wasOpen.current = true;
       return;
     }
     if (!wasOpen.current) return;
     wasOpen.current = false;
-    if (restoreFocus) (anchorRef?.current ?? triggerRef.current)?.focus();
-  }, [anchorRef, open, restoreFocus]);
+    const anchor = anchorRef?.current ?? triggerRef.current;
+    if (restoreFocus && visible && canRestoreFocus(anchor)) anchor.focus();
+  }, [anchorRef, present, restoreFocus, visible]);
 
   useEffect(() => {
     if (!open) return;
     const onPointer = (event: MouseEvent) => {
+      if (!canRestoreFocus(menuRef.current)) return;
       const target = event.target as Node;
       if (
         !rootRef.current?.contains(target) &&
@@ -116,11 +127,11 @@ export function AnchoredMenu({
       }
     };
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || !canRestoreFocus(menuRef.current)) return;
       // Capture + stop so a parent overlay (add-provider dialog) does not
       // close on the same Escape that dismisses this menu.
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       onClose();
     };
     window.addEventListener("mousedown", onPointer);
@@ -161,8 +172,7 @@ export function AnchoredMenu({
       : fallbackFits
         ? fallbackTop
         : Math.min(Math.max(MARGIN, preferredTop), maxTop);
-    menu.style.setProperty("--lg-origin-x", `${anchorRect.left + anchorRect.width / 2 - left}px`);
-    menu.style.setProperty("--lg-origin-y", `${anchorRect.top + anchorRect.height / 2 - top}px`);
+    origin.current = `${Math.max(0, Math.min(surfaceWidth, anchorRect.left + anchorRect.width / 2 - left))}px ${top < anchorRect.top ? 'bottom' : 'top'}`;
     setPosition((previous) =>
       previous &&
       previous.top === top &&
@@ -198,7 +208,7 @@ export function AnchoredMenu({
     if (!open || !position) return;
     const frame = window.requestAnimationFrame(() => {
       const menu = menuRef.current;
-      if (!menu) return;
+      if (!canRestoreFocus(menu)) return;
       if (initialFocus === "none") return;
       if (initialFocus === "input") {
         menu.querySelector<HTMLElement>("input:not([disabled])")?.focus();
@@ -234,11 +244,12 @@ export function AnchoredMenu({
   return (
     <div className={className} ref={rootRef}>
       {trigger(triggerRef)}
-      {open && typeof document !== "undefined"
-        ? createPortal(
+      {present && visible && typeof document !== "undefined"
+        ? portalToBody(
             <div
               ref={menuRef}
-              className={`${menuClassName} lg-regular lg-menu${position ? " is-open lg-morph-in" : ""}`}
+              className={`${menuClassName} ui-floating-presence motion-managed${position ? " is-open" : ""}${leaving ? " is-leaving" : ""}`}
+              inert={leaving}
               role={role}
               aria-label={label}
               onKeyDown={onMenuKeyDown}
@@ -247,6 +258,7 @@ export function AnchoredMenu({
                   ? {
                       top: `${position.top}px`,
                       left: `${position.left}px`,
+                      transformOrigin: origin.current,
                       ...(position.width === undefined
                         ? {}
                         : { width: `${position.width}px` }),
@@ -254,9 +266,8 @@ export function AnchoredMenu({
                   : undefined
               }
             >
-              {children}
+              {leaving ? lastChildren.current : children}
             </div>,
-            document.body,
           )
         : null}
     </div>

@@ -1,4 +1,5 @@
 import type { NativeSubagent } from '../../shared/contracts';
+import { plainMarkdownLine } from '../lib/markdown-plain';
 import { record, text } from './model';
 
 const MAX_IMAGE_BASE64 = Math.ceil(10 * 1024 * 1024 / 3) * 4;
@@ -41,10 +42,25 @@ export function compactionBlocks(raw: Record<string, unknown>): unknown[] {
   return Array.isArray(raw.images) ? raw.images : [];
 }
 
+/** Clean each line before flattening so headings and list markers never leak into the row. */
+export function compactionPreview(shortSummary: string, summary: string): string {
+  return (shortSummary.trim() || summary).split(/\r?\n/).map(plainMarkdownLine).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
 export function sessionResourceReferences(source: string): string[] {
   // Native shake placeholders append a whitespace-separated region selector; it is part of the recovery identity.
-  const matches = source.matchAll(/artifact:\/\/[^\s<>"'`()\[\]]+(?:\s*\(region \d+\))?/g);
+  const matches = source.matchAll(/(?:artifact|agent):\/\/[^\s<>"'`()\[\]]+(?:\s*\(region \d+\))?/g);
   return [...new Set(Array.from(matches, ([value]) => /\(region \d+\)$/.test(value) ? value : value.replace(/[),.;]+$/, '')))];
+}
+
+/** Keep human markdown literal while offering its explicit file targets separately. */
+export function literalFileReferences(source: string): string[] {
+  const references = new Set<string>();
+  for (const match of source.matchAll(/\[[^\]\r\n]*\]\(([^\s()]+)(?:\s+"[^"]*")?\)/g)) {
+    const path = match[1]!;
+    if (!path.startsWith('#') && !/^[a-z][a-z0-9+.-]*:/i.test(path)) references.add(path);
+  }
+  return [...references];
 }
 
 const sourceInformation: Record<string, true> = {
@@ -65,7 +81,7 @@ export function partitionSourceDiagnostics(diagnostics: readonly string[]): { in
 export function nativeTaskChild(agents: readonly NativeSubagent[], id: string): NativeSubagent | undefined {
   let match: NativeSubagent | undefined;
   for (const agent of agents) {
-    if ((agent.nativeId || agent.id) !== id) continue;
+    if ((agent.nativeId ?? (agent.historical ? undefined : agent.id)) !== id) continue;
     if (match) return undefined;
     match = agent;
   }

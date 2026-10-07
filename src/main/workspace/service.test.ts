@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, mkdir, writeFile, symlink, rm, realpath } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, writeFile, symlink, rm, realpath } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
@@ -134,5 +134,81 @@ test('file search retains partial matches, scopes paths, and gives bounded root 
     assert.deepEqual(outside.entries, []);
     assert.equal(outside.truncated, true);
     assert.ok(outside.diagnostics.some(message => message.includes('outside')));
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('untracked text and empty files produce added patches Git can apply', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'omp-added-diff-'));
+  try {
+    await exec('git', ['init'], { cwd: root });
+    const service = new WorkspaceService();
+    const contents: Record<string, string> = { 'new "file".txt': 'first\n\nlast', 'empty.txt': '', 'bom.txt': '\ufeffhello\n', 'crlf.txt': 'one\r\ntwo\r\n' };
+    for (const [name, text] of Object.entries(contents)) await writeFile(path.join(root, name), text);
+    const diff = await service.gitDiff(root);
+    assert.deepEqual(new Set(diff.files.map(file => file.path)), new Set(Object.keys(contents)));
+    for (const file of diff.files) {
+      assert.equal(file.status, 'untracked ?');
+      assert.match(file.patch, /new file mode 100644/);
+      const patchPath = path.join(root, '.git', 'review.patch');
+      await writeFile(patchPath, file.patch);
+      await exec('git', ['apply', '--cached', patchPath], { cwd: root });
+      const { stdout } = await exec('git', ['show', `:${file.path}`], { cwd: root });
+      assert.equal(stdout, contents[file.path]);
+      assert.equal(await readFile(path.join(root, file.path), 'utf8'), contents[file.path]);
+    }
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('untracked binary and oversized files explain why line review is unavailable', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'omp-added-limits-'));
+  try {
+    await exec('git', ['init'], { cwd: root });
+    const service = new WorkspaceService();
+    await writeFile(path.join(root, 'binary'), Buffer.from([0, 1, 255]));
+    await writeFile(path.join(root, 'large'), 'a'.repeat(4 * 1024 * 1024));
+    await writeFile(path.join(root, 'lines'), 'a\n'.repeat(5001));
+    const files = new Map((await service.gitDiff(root)).files.map(file => [file.path, file.patch]));
+    assert.match(files.get('binary')!, /^Binary files /);
+    assert.match(files.get('large')!, /Diff unavailable:.*4 MiB/);
+    assert.match(files.get('lines')!, /Diff unavailable:.*5,000-line/);
+    await writeFile(path.join(root, 'lines'), 'a\n'.repeat(5000));
+    assert.match((await service.gitDiff(root, 'lines')).files[0].patch, /@@ -0,0 \+1,5000 @@/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('untracked symlinks cannot disclose content outside the workspace', async () => {
+  const temporary = await mkdtemp(path.join(tmpdir(), 'omp-added-links-'));
+  try {
+    const root = path.join(temporary, 'work');
+    await mkdir(root);
+    await exec('git', ['init'], { cwd: root });
+    await writeFile(path.join(temporary, 'secret'), 'outside');
+    await symlink(path.join(temporary, 'secret'), path.join(root, 'link'));
+    await assert.rejects(new WorkspaceService().gitDiff(root), /outside|escapes/);
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+test('review discovers referenced nested repositories and deleted files without leaking outside the workspace', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'omp-nested-review-'));
+  try {
+    const canonical = await realpath(root);
+    for (const name of ['one', 'two']) {
+      const repo = path.join(root, name); await mkdir(repo);
+      const git = (...args: string[]) => exec('git', args, { cwd: repo, env: { ...process.env, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_GLOBAL: '/dev/null' } });
+      await git('init'); await writeFile(path.join(repo, 'tracked.txt'), 'before\n'); await git('add', '.');
+      await git('-c', 'user.name=Review Test', '-c', 'user.email=test@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-m', 'base');
+      await rm(path.join(repo, 'tracked.txt')); await writeFile(path.join(repo, 'new.txt'), 'new\n');
+    }
+    await writeFile(path.join(root, 'loose.txt'), 'outside git\n');
+    const service = new WorkspaceService();
+    const result = await service.gitDiff(root, undefined, ['one/tracked.txt', 'two/new.txt', 'loose.txt', '../secret']);
+    assert.deepEqual(new Set(result.repositories), new Set([path.join(canonical, 'one'), path.join(canonical, 'two')]));
+    assert.deepEqual(new Set(result.files.map(file => file.path)), new Set(['one/tracked.txt', 'one/new.txt', 'two/tracked.txt', 'two/new.txt']));
+    assert.deepEqual(result.unversionedPaths, ['loose.txt', '../secret']);
+    await writeFile(path.join(root, 'one/new.txt'), 'changed after discovery\n');
+    assert.match((await service.gitDiff(root, 'one/new.txt', ['one/new.txt'])).files.find(file => file.path === 'one/new.txt')!.patch, /changed after discovery/);
+    await assert.rejects(service.gitDiff(root, undefined, Array(501).fill('one/new.txt')), /500/);
+    assert.equal(result.files.find(file => file.path === 'one/tracked.txt')!.removed, 1);
+    await Promise.all(Array.from({ length: 205 }, (_, index) => writeFile(path.join(root, 'one', `more-${index}.txt`), 'line\n')));
+    assert.equal((await service.gitDiff(root, undefined, ['one/new.txt'])).files.length, 207);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

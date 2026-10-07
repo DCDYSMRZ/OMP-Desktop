@@ -2,18 +2,11 @@
 // Windows/Linux titlebar reservation. Existing persisted widths remain intact;
 // this only affects a new profile without a saved preference.
 export const WORK_PANEL_MIN_WIDTH = 244;
-export const WORK_PANEL_DEFAULT_WIDTH = 360;
+export const WORK_PANEL_DEFAULT_WIDTH = 420;
 export const WORK_PANEL_CHAT_MIN_WIDTH = 1040;
 export const WORK_PANEL_CHAT_MAX_WIDTH = 10000;
-/**
- * Hard MainChat floor for the in-flow three-column shell. The work panel may
- * never take width below it, and the expanded sidebar yields first. The value
- * is derived from the composer toolbar's unfolded row (plus button, mode and
- * permission chips, model/thinking chip, enhance and send buttons) plus its
- * margins: below this width the composer would fold, so it replaces the 515px
- * composer reservation of ADR 0226.
- */
-export const MAIN_PANE_MIN_WIDTH = 450;
+/** Main reading pane reservation; the sidebar yields before the transcript. */
+export const MAIN_PANE_MIN_WIDTH = 560;
 export const MAIN_PANE_REOPEN_TARGET_WIDTH = MAIN_PANE_MIN_WIDTH + 10;
 /**
  * The regular panel minimum is a presentation affordance. The sidebar reopen
@@ -27,12 +20,7 @@ export type WorkPanelChatResizeGesture = {
   startWidth: number;
 };
 
-/**
- * Lower bound for the work-panel width. There is deliberately no matching
- * constant upper bound: the panel's maximum is the live three-column budget, so
- * a wide window can spend client width on the panel down to the MainChat floor
- * instead of stopping at a fixed pixel cap.
- */
+/** The upper bound is supplied by the live layout budget, not a pixel cap. */
 export function workPanelWidthLimits(min = WORK_PANEL_MIN_WIDTH) {
   return {
     min: Math.max(WORK_PANEL_COMPACT_MIN_WIDTH, Math.round(min)),
@@ -80,12 +68,7 @@ export type WorkPanelLayout = {
   shouldCollapseSidebar: boolean;
 };
 
-/**
- * Shared three-column budget. The shell is a fixed-width client area, so the
- * only way to satisfy the MainChat floor is to cap the panel and, at the
- * threshold, collapse the sidebar. The cap is the client width itself: a wide
- * window lets the panel keep growing until MainChat reaches its floor.
- */
+/** Keep the reading pane usable and the regular panel within 40% of the window. */
 export function workPanelLayout({
   containerWidth,
   sidebarWidth,
@@ -120,7 +103,7 @@ export function workPanelLayout({
   );
   const maxPanelWidth = Math.max(
     0,
-    width - leftWidth - MAIN_PANE_MIN_WIDTH,
+    Math.min(width * .4, width - leftWidth - MAIN_PANE_MIN_WIDTH),
   );
   const panelWidth = Math.min(requested, maxPanelWidth);
   return {
@@ -129,15 +112,14 @@ export function workPanelLayout({
     maxPanelWidth,
     shouldCollapseSidebar:
       !sidebarCollapsed &&
-      width - leftWidth - requestedPanelWidth <= MAIN_PANE_MIN_WIDTH,
+      width - leftWidth - Math.min(requested, width * .4) < MAIN_PANE_MIN_WIDTH,
   };
 }
 
 /**
  * Computes the right-column width used while manually reopening the sidebar.
  * The right column gives up its space first, preserving the current MainChat
- * width. If that cannot keep the 450px hard floor, the 460px reopen target is
- * used as the next best stable width.
+ * width when possible, otherwise preserving the reading pane reservation.
  */
 export function workPanelWidthForSidebarReopen({
   containerWidth,
@@ -164,7 +146,7 @@ export function workPanelWidthForSidebarReopen({
       : MAIN_PANE_REOPEN_TARGET_WIDTH;
   return Math.max(
     WORK_PANEL_COMPACT_MIN_WIDTH,
-    Math.min(panelWidth, remainingAfterSidebar - targetMainWidth),
+    Math.min(panelWidth, width * .4, remainingAfterSidebar - targetMainWidth),
   );
 }
 

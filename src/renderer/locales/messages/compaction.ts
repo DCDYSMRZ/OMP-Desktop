@@ -1,0 +1,31 @@
+/** Compaction, branch-summary and handoff reading cards. */
+export const compactionMessages: Record<'en' | 'zh-CN', Record<string, string>> = {
+  en: {
+    'omp.compaction.context': 'Context compacted',
+    'omp.compaction.branch': 'Branch summary',
+    'omp.compaction.handoff': 'Handoff',
+    'omp.compaction.showAll': 'Show full text',
+    'omp.compaction.showLess': 'Limit text height',
+    'omp.compaction.collapse': 'Collapse',
+    'omp.compaction.archive': 'Archived conversation',
+    'omp.compaction.details': 'Raw details',
+    'omp.compaction.tokens': '{{before}} → {{after}} tokens',
+    'omp.compaction.unknownTokens': 'Not reported',
+    'omp.compaction.branchOrigin': 'Branched from {{id}}',
+    'omp.compaction.archiveOmitted': '{{count}} archived characters omitted',
+  },
+  'zh-CN': {
+    'omp.compaction.context': '上下文已压缩',
+    'omp.compaction.branch': '分支摘要',
+    'omp.compaction.handoff': '交接',
+    'omp.compaction.showAll': '显示全文',
+    'omp.compaction.showLess': '限制文本高度',
+    'omp.compaction.collapse': '收起',
+    'omp.compaction.archive': '归档对话',
+    'omp.compaction.details': '原始详情',
+    'omp.compaction.tokens': '{{before}} → {{after}} 词元',
+    'omp.compaction.unknownTokens': '未报告',
+    'omp.compaction.branchOrigin': '分支起点：{{id}}',
+    'omp.compaction.archiveOmitted': '已省略 {{count}} 个归档字符',
+  },
+};

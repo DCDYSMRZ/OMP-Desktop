@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { buildConversationMinimapMarkers, minimapPreview } from './conversation-minimap';
+import { activeMinimapIndex, buildConversationMinimapMarkers, minimapPreview } from './conversation-minimap';
 import { createReadingAnchor, readingAnchorAdjustment, readingAnchorMessageIds, recallReadingPosition, rememberReadingPosition } from './transcript-reading-position';
 
 test('navigation snippets remove markdown without discarding code or link labels', () => {
@@ -17,6 +17,39 @@ test('separate projected answers retain their own navigation targets', () => {
     { id: 'a', role: 'assistant', preview: 'First answer' },
     { id: 'b', role: 'assistant', preview: 'Second answer' },
   ]);
+});
+
+test('loaded image and tool-only turns keep jump targets without inventing empty history markers', () => {
+  assert.deepEqual(buildConversationMinimapMarkers([
+    { id: 'image', role: 'user', hasContent: true },
+    { id: 'tool', role: 'assistant', hasContent: true },
+    { id: 'empty', role: 'assistant' },
+    { id: 'delivery', role: 'custom', hasContent: true },
+  ]), [
+    { id: 'image', role: 'user', preview: '' },
+    { id: 'tool', role: 'assistant', preview: '' },
+  ]);
+});
+
+test('following selects the newest marker without measuring older content', () => {
+  assert.equal(activeMinimapIndex(6, true, 500, 300, () => { throw new Error('unnecessary layout'); }), 5);
+  assert.equal(activeMinimapIndex(7, true, 500, 300, () => { throw new Error('unnecessary layout'); }), 6);
+});
+
+test('reading line ignores a previous turn sliver and retains the entry across gaps', () => {
+  const tops = [-700, -2, 70, 400, 600];
+  assert.equal(activeMinimapIndex(tops.length, false, 800, 210, index => tops[index]), 2);
+  assert.equal(activeMinimapIndex(tops.length, false, 800, 400, index => tops[index]), 3);
+});
+
+test('coincident anchors prefer the later entry and conversation boundaries remain reachable', () => {
+  const tops = [0, 100, 100, 300];
+  assert.equal(activeMinimapIndex(tops.length, false, 20, 100, index => tops[index]), 2);
+  assert.equal(activeMinimapIndex(tops.length, false, 0, 210, index => tops[index]), 0);
+  assert.equal(activeMinimapIndex(tops.length, false, 20, -10, index => tops[index]), 0);
+  assert.equal(activeMinimapIndex(0, true, 0, 200, () => 0), -1);
+  assert.equal(activeMinimapIndex(1, false, 0, 200, () => 10), 0);
+  assert.equal(activeMinimapIndex(2, true, 0, 200, () => 10), 1);
 });
 
 test('reading memory separates sessions and evicts the least recently visited', () => {

@@ -1,0 +1,33 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import i18next from 'i18next';
+import { toolsMessages } from '../locales/messages/tools';
+import { composeRosterRow, reconcileRosterDeliveries } from './roster-model';
+import { flattenSubagentTree, subagentPhase, subagentSummary } from './subagent-model';
+import { normalizeAgent } from '../../shared/subagent-evidence';
+import type { NativeAsyncDeliveryJob } from '../../shared/native-task-results';
+const i18n = i18next.createInstance();
+await i18n.init({ lng: 'zh-CN', resources: { 'zh-CN': { translation: toolsMessages['zh-CN'] } } });
+test('identical summaries reveal individual assignment scope and semantic activity', () => {
+ const agents = ['frontend', 'backend'].map(id => ({ id, agent: 'task', description: 'Review the workspace.', assignment: `Review the workspace.\nInspect src/${id}.ts`, status: 'running', progress: { currentTool: 'read', currentToolArgs: { path: `src/${id}.ts`, i: 'Reading English intent' }, lastIntent: 'Reading English intent', toolCount: 3, tokens: 1200 } }));
+ const first = composeRosterRow(agents[0], agents, i18n.t);
+ const second = composeRosterRow(agents[1], agents, i18n.t);
+ assert.equal(first.scope, 'Inspect src/frontend.ts');
+ assert.equal(second.scope, 'Inspect src/backend.ts');
+ assert.equal(first.activity, '读取 frontend.ts');
+ assert.equal(first.type, undefined);
+ assert.equal(composeRosterRow({ ...agents[0], agent: 'reviewer' }, agents, i18n.t).type, 'reviewer');
+});
+test('saved roster counts and rows share settled delivery evidence across nested children', () => {
+ const nodes = ['a', 'b', 'c', 'd'].map((id, index) => ({ agent: normalizeAgent({ id, status: index < 2 ? 'completed' : 'unknown' }, { source: 'journal', historical: true }), children: [] }));
+ const jobs: NativeAsyncDeliveryJob[] = ['c', 'd'].map(id => ({ id, agentId: id, type: 'task', status: 'completed', raw: {}, ambiguous: false }));
+ const deliveries = new Map(jobs.map(job => [job.id, [{ job }]]));
+ assert.equal(subagentSummary(flattenSubagentTree(nodes)).counts.unknown, 2);
+ const reconciled = reconcileRosterDeliveries(nodes, deliveries);
+ assert.deepEqual(reconciled.map(node => subagentPhase(node.agent)), ['completed', 'completed', 'completed', 'completed']);
+ assert.equal(subagentSummary(flattenSubagentTree(reconciled)).counts.completed, 4);
+ assert.equal(subagentSummary(flattenSubagentTree(reconciled)).counts.unknown, 0);
+ const nested = reconcileRosterDeliveries([{ ...nodes[0], children: nodes.slice(1) }], deliveries);
+ assert.equal(subagentSummary(flattenSubagentTree(nested)).counts.completed, 4);
+ assert.equal(subagentPhase(nodes[2].agent), 'unknown');
+});

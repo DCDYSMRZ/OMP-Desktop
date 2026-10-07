@@ -37,6 +37,7 @@ export default defineConfig({
   renderer: {
     root: resolve(root, 'src/renderer'),
     plugins: [react(), tailwindcss(), developmentCsp],
+    worker: { format: 'es' },
     build: { minify: 'esbuild', rollupOptions: { input: resolve(root, 'src/renderer/index.html') } },
   },
 });

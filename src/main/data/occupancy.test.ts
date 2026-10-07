@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { writeFileSync } from 'node:fs';
 import { mkdtemp, mkdir, realpath, rename, rm, stat, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -36,8 +37,9 @@ async function fixture() {
       if (binary === '/bin/ps') {
         if (args.includes('pid=,args=')) {
           const selected = new Set(args[args.indexOf('-p') + 1].split(','));
-          const launchers = inventory.trimEnd().split('\n').map(line => line.trim().split(/\s+/)).filter(columns => selected.has(columns[1])).map(columns => `${columns[1]} ${columns.slice(11).join(' ')}`).join('\n');
-          return { code: 0, stdout: interpreterArgs || `${launchers}\n`, stderr: '' };
+          const overrides = new Map(interpreterArgs.split('\n').filter(Boolean).map(line => [line.trim().split(/\s+/)[0], line]));
+          const launchers = inventory.trimEnd().split('\n').map(line => line.trim().split(/\s+/)).filter(columns => selected.has(columns[1])).map(columns => overrides.get(columns[1]) ?? `${columns[1]} ${columns.slice(11).join(' ')}`).join('\n');
+          return { code: 0, stdout: `${launchers}\n`, stderr: '' };
         }
         if (failure === 'ps') return { code: 1, stdout: '', stderr: 'private ps output' };
         psCount++;
@@ -178,6 +180,112 @@ test('PID reuse and native process arrival during a probe are unknown', async ()
       f.stdin(tty(42));
       await f.crumb(f.other);
       assert.equal((await f.inspect()).status, 'unknown');
+    } finally { await f.close(); }
+  }
+});
+
+test('partial candidate scans accept confirmed exits and preserve the surviving verdict', async () => {
+  for (const scan of [1, 2]) {
+    for (const verdict of ['idle', 'owned', 'external'] as const) {
+      const f = await fixture();
+      try {
+        const survivor = processRow(42, f.options.executable);
+        const owned = verdict === 'owned' ? processRow(44, f.options.executable) : '';
+        if (owned) { f.options.ownedPids = [44]; f.options.ownedSessionPaths = [f.target]; }
+        f.processes(survivor + owned);
+        f.stdin(tty(42));
+        await f.crumb(verdict === 'external' ? f.target : f.other);
+        await f.crumb(f.other, 'ttys002');
+        const baseline = await f.inspect();
+        assert.equal(baseline.status, verdict);
+        const original = survivor + owned + processRow(43, f.options.executable);
+        const run = f.probe.run;
+        let candidateScans = 0;
+        let departed = false;
+        f.probe.run = async (binary, args, timeout) => {
+          if (binary === '/bin/ps' && args.includes('-A')) {
+            return { code: 0, stdout: processRow(10, '/sbin/launchd') + (departed ? survivor + owned : original), stderr: '' };
+          }
+          if (binary === '/usr/sbin/lsof' && args.includes('-p')) {
+            if (++candidateScans === scan) { departed = true; return { code: 1, stdout: tty(42), stderr: '' }; }
+            return { code: 0, stdout: tty(42) + (departed ? '' : tty(43, '/dev/ttys002')), stderr: '' };
+          }
+          return run(binary, args, timeout);
+        };
+        assert.deepEqual(await f.inspect(), baseline, `${verdict}, scan ${scan}`);
+      } finally { await f.close(); }
+    }
+  }
+});
+
+test('partial candidate scans require every absent identity to have exited', async () => {
+  for (const replacement of ['same', 'other', 'native', 'one-still-alive'] as const) {
+    const f = await fixture();
+    try {
+      const survivor = processRow(42, f.options.executable);
+      const missing = processRow(43, f.options.executable);
+      const extra = replacement === 'one-still-alive' ? processRow(44, f.options.executable) : '';
+      const next = replacement === 'same' || replacement === 'one-still-alive' ? missing :
+        processRow(43, replacement === 'native' ? f.options.executable : '/usr/bin/editor', 'Fri Jan  2 00:00:00 2026');
+      f.processes(survivor + missing + extra, survivor + next);
+      f.stdin(tty(42));
+      await f.crumb(f.other);
+      const run = f.probe.run;
+      let scans = 0;
+      f.probe.run = async (binary, args, timeout) => {
+        const result = await run(binary, args, timeout);
+        return binary === '/usr/sbin/lsof' && args.includes('-p') && ++scans === 1 ? { ...result, code: 1 } : result;
+      };
+      assert.equal((await f.inspect()).status, replacement === 'other' ? 'idle' : 'unknown', replacement);
+    } finally { await f.close(); }
+  }
+});
+
+test('a replacement native found by the final candidate recheck cannot be hidden by an earlier inventory', async () => {
+  const f = await fixture();
+  try {
+    const original = processRow(42, f.options.executable) + processRow(43, f.options.executable);
+    const replacement = processRow(42, f.options.executable) + processRow(43, f.options.executable, 'Fri Jan  2 00:00:00 2026');
+    f.processes(original);
+    f.stdin(tty(42) + tty(43, '/dev/ttys002'));
+    await f.crumb(f.other);
+    await f.crumb(f.other, 'ttys002');
+    const run = f.probe.run;
+    let scans = 0;
+    f.probe.run = async (binary, args, timeout) => {
+      if (binary === '/usr/sbin/lsof' && args.includes('-p') && ++scans === 2) {
+        f.processes(replacement);
+        return { code: 1, stdout: tty(42), stderr: '' };
+      }
+      return run(binary, args, timeout);
+    };
+    assert.equal((await f.inspect()).status, 'unknown');
+  } finally { await f.close(); }
+});
+
+test('candidate exit recovery never relaxes malformed, diagnostic or target-path evidence', async () => {
+  for (const failure of ['stderr', 'termination', 'field', 'all-present', 'target', 'inventory', 'deadline'] as const) {
+    const f = await fixture();
+    try {
+      const survivor = processRow(42, f.options.executable);
+      f.processes(survivor + processRow(43, f.options.executable), survivor);
+      f.stdin(tty(42));
+      await f.crumb(f.other);
+      const run = f.probe.run;
+      const now = f.probe.now();
+      let scanned = false;
+      f.probe.run = async (binary, args, timeout) => {
+        if (failure === 'inventory' && scanned && binary === '/bin/ps' && args.includes('-A')) return empty;
+        if (binary === '/usr/sbin/lsof' && args.includes(failure === 'target' ? '--' : '-p')) {
+          scanned = true;
+          if (failure === 'deadline') f.probe.now = () => now + 5_001;
+          return { code: 1, stdout: failure === 'termination' ? tty(42).slice(0, -2) :
+            failure === 'field' ? fields('p42', 'f0', 'xinvalid') :
+            tty(42) + (failure === 'all-present' ? tty(43) : ''), stderr: failure === 'stderr' ? 'denied' : '' };
+        }
+        return run(binary, args, timeout);
+      };
+      assert.equal((await f.inspect()).status, 'unknown', failure);
     } finally { await f.close(); }
   }
 });
@@ -457,4 +565,215 @@ test('allocation cannot conceal failed probes, malformed evidence or disappearin
       assert.equal((await f.inspect()).status, 'unknown', failure);
     } finally { await f.close(); }
   }
+});
+
+test('interpreter and candidate exits are dropped after a confirming inventory', async () => {
+  for (const interpreter of [false, true]) {
+    const f = await fixture();
+    try {
+      f.processes(processRow(42, interpreter ? '/usr/local/bin/bun' : f.options.executable), '');
+      const run = f.probe.run;
+      f.probe.run = (binary, args, timeout) => binary === '/bin/ps' && args.includes('pid=,args=') ? Promise.resolve(empty) : run(binary, args, timeout);
+      assert.equal((await f.inspect()).status, 'idle');
+    } finally { await f.close(); }
+  }
+});
+
+test('cwd scopes missing terminal breadcrumbs but never overrides target evidence', async () => {
+  for (const scenario of ['other', 'same', 'writer', 'resume', 'breadcrumb'] as const) {
+    const f = await fixture();
+    try {
+      await writeFile(f.target, `${JSON.stringify({ type: 'session', id: 'target', cwd: f.root })}\n`);
+      f.processes(processRow(42, f.options.executable));
+      f.stdin(tty(42) + fields('p42', 'fcwd', 'tDIR', `n${scenario === 'same' ? f.root : '/unrelated/workspace'}`));
+      if (scenario === 'writer') f.files(await f.writer(42));
+      if (scenario === 'resume') f.interpreterArgs(`42 ${f.options.executable} --resume ${f.target}`);
+      if (scenario === 'breadcrumb') await f.crumb(f.target);
+      assert.equal((await f.inspect()).status, scenario === 'other' ? 'idle' : scenario === 'same' ? 'unknown' : 'external', scenario);
+    } finally { await f.close(); }
+  }
+});
+
+test('unrelated mount warning is benign only for an exact target scan', async () => {
+  for (const scenario of ['other', 'target', 'candidate', 'unknown'] as const) {
+    const f = await fixture();
+    try {
+      const run = f.probe.run;
+      if (scenario === 'candidate') { f.processes(processRow(42, f.options.executable)); f.stdin(tty(42)); await f.crumb(f.other); }
+      f.probe.run = async (binary, args, timeout) => {
+        const result = await run(binary, args, timeout);
+        if (binary !== '/usr/sbin/lsof' || args.includes('-h')) return result;
+        const stderr = scenario === 'unknown' ? 'permission denied' : `lsof: WARNING: can't stat() apfs file system ${scenario === 'target' ? f.root : '/unrelated-mount'}\n      Output information may be incomplete.\n`;
+        return { ...result, stderr };
+      };
+      assert.equal((await f.inspect()).status, scenario === 'other' ? 'idle' : 'unknown');
+    } finally { await f.close(); }
+  }
+});
+
+test('unsupported launch forms are scoped by cwd, and dead diagnostic candidates are dropped', async () => {
+  for (const scenario of ['unrelated', 'exited'] as const) {
+    const f = await fixture();
+    try {
+      await writeFile(f.target, `${JSON.stringify({ type: 'session', id: 'target', cwd: f.root })}\n`);
+      f.processes(processRow(42, scenario === 'unrelated' ? '/usr/local/bin/bun' : f.options.executable), scenario === 'exited' ? '' : undefined);
+      if (scenario === 'unrelated') {
+        f.interpreterArgs('42 bun --unsupported /checkout/packages/coding-agent/src/cli.ts');
+        f.stdin(tty(42) + fields('p42', 'fcwd', 'tDIR', 'n/unrelated/workspace'));
+      } else {
+        const run = f.probe.run;
+        f.probe.run = (binary, args, timeout) => binary === '/usr/sbin/lsof' && args.includes('-p') ? Promise.resolve({ code: 1, stdout: '', stderr: 'process disappeared' }) : run(binary, args, timeout);
+      }
+      assert.equal((await f.inspect()).status, 'idle', scenario);
+    } finally { await f.close(); }
+  }
+});
+
+test('new and reused native identities only affect plausible targets', async () => {
+  for (const reused of [false, true]) for (const wrapper of [false, true]) for (const scenario of ['other', 'same', 'writer', 'breadcrumb', 'exited'] as const) {
+    const f = await fixture();
+    try {
+      await writeFile(f.target, `${JSON.stringify({ type: 'session', id: 'target', cwd: f.root })}\n`);
+      if (scenario === 'breadcrumb') await f.crumb(f.target);
+      const writer = await f.writer(42);
+      const run = f.probe.run;
+      let inventories = 0;
+      f.probe.run = async (binary, args, timeout) => {
+        if (binary === '/bin/ps' && args.includes('-A')) {
+          inventories++;
+          return { code: 0, stdout: processRow(10, '/sbin/launchd') + ((reused || inventories > 1) && !(scenario === 'exited' && inventories > 2) ? processRow(42, wrapper ? '/usr/local/bin/bun' : f.options.executable, inventories === 1 ? 'Thu Jan  1 00:00:00 2026' : 'Fri Jan  2 00:00:00 2026') : ''), stderr: '' };
+        }
+        if (binary === '/bin/ps' && args.includes('pid=,args=')) return { code: 0, stdout: `42 ${wrapper ? 'bun /checkout/packages/coding-agent/src/cli.ts' : f.options.executable}\n`, stderr: '' };
+        if (binary === '/usr/sbin/lsof' && args.includes('-p')) {
+          if (args.includes('--')) return scenario === 'writer' ? { code: 0, stdout: writer, stderr: '' } : empty;
+          return { code: 0, stdout: tty(42) + fields('p42', 'fcwd', 'tDIR', `n${scenario === 'same' ? f.root : '/unrelated/workspace'}`), stderr: '' };
+        }
+        return run(binary, args, timeout);
+      };
+      assert.equal((await f.inspect()).status, scenario === 'same' ? 'unknown' : scenario === 'writer' || scenario === 'breadcrumb' ? 'external' : 'idle', `${wrapper}:${scenario}`);
+    } finally { await f.close(); }
+  }
+});
+
+test('an unrelated terminal switching sessions remains idle unless it switches to the target', async () => {
+  for (const target of [false, true]) {
+    const f = await fixture();
+    try {
+      await writeFile(f.target, `${JSON.stringify({type:'session',id:'target',cwd:f.root})}\n`);
+      const other = join(f.root, 'third.jsonl');
+      await writeFile(other, '{}\n');
+      await f.crumb(f.other);
+      f.processes(processRow(42, f.options.executable));
+      f.stdin(tty(42) + fields('p42', 'fcwd', 'tDIR', 'n/unrelated/workspace'));
+      const run = f.probe.run;
+      let inventories = 0;
+      f.probe.run = async (binary, args, timeout) => {
+        if (binary === '/bin/ps' && args.includes('-A') && ++inventories === 2) writeFileSync(join(f.options.terminalDirectory, 'ttys001'), `${f.root}\n${target ? f.target : other}\n`);
+        return run(binary, args, timeout);
+      };
+      assert.equal((await f.inspect()).status, target ? 'external' : 'idle');
+    } finally { await f.close(); }
+  }
+});
+
+test('presence participants never enter legacy heuristics, but older terminals still do', async () => {
+  const f = await fixture();
+  try {
+    f.processes(processRow(42, f.options.executable));
+    f.probe.presence = async () => ({ lock: 'free', discovery: { complete: true, processes: [{ pid: 42, processStartMs: Date.parse('Thu Jan  1 00:00:00 2026'), socketPath: '/p', responsive: true, sessions: [] }] } });
+    f.fail('lsof');
+    const idle = await f.inspect();
+    assert.equal(idle.status, 'idle'); assert.equal(idle.confidence, 'exact');
+    f.fail(undefined);
+    f.processes(processRow(42, f.options.executable) + processRow(43, f.options.executable));
+    f.stdin(tty(43)); await f.crumb(f.target);
+    assert.equal((await f.inspect()).status, 'external');
+  } finally { await f.close(); }
+});
+
+test('empty participant and legacy inventories return exact idle without lsof', async () => {
+  const f = await fixture();
+  try {
+    f.probe.presence = async () => ({ lock: 'free', discovery: { complete: true, processes: [] } });
+    f.fail('lsof');
+    const access = await f.inspect();
+    assert.equal(access.status, 'idle'); assert.equal(access.confidence, 'exact'); assert.equal(access.occupancySource, 'presence');
+  } finally { await f.close(); }
+});
+
+test('a live desktop target stays owned without a socket or with a slow owned socket', async () => {
+  for (const slow of [false, true]) {
+    const f = await fixture();
+    try {
+      f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+      f.processes(processRow(42, f.options.executable));
+      f.probe.presence = async () => ({ lock: 'held', discovery: { complete: true, processes: slow ? [{ pid: 42, processStartMs: Date.parse('Thu Jan  1 00:00:00 2026'), socketPath: '/slow', responsive: false }] : [] } });
+      f.fail('lsof');
+      assert.equal((await f.inspect()).status, 'owned');
+    } finally { await f.close(); }
+  }
+});
+
+test('external holders and unresolved non-owned sockets override desktop lock knowledge', async () => {
+  for (const responsive of [false, true]) {
+    const f = await fixture();
+    try {
+      f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+      f.processes(processRow(42, f.options.executable) + processRow(43, f.options.executable));
+      const canonical = await realpath(f.target);
+      f.probe.presence = async () => ({ lock: 'held', discovery: { complete: true, processes: [{ pid: 43, processStartMs: Date.parse('Thu Jan  1 00:00:00 2026'), socketPath: '/external', responsive, ...(responsive ? { sessions: [{ sessionFile: canonical, sessionId: 'external', cwd: f.root, state: 'idle' as const, since: 1 }] } : {}) }] } });
+      assert.equal((await f.inspect()).status, 'external');
+    } finally { await f.close(); }
+  }
+});
+
+test('desktop lock recovery still rejects a plausible legacy terminal', async () => {
+  const f = await fixture();
+  try {
+    f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+    f.processes(processRow(42, f.options.executable) + processRow(43, f.options.executable));
+    f.probe.presence = async () => ({ lock: 'held', discovery: { complete: true, processes: [] } });
+    f.stdin(tty(43));
+    assert.equal((await f.inspect()).status, 'unknown');
+  } finally { await f.close(); }
+});
+
+test('desktop children appearing during a probe never become uncertain external candidates', async () => {
+  for (const indirect of [false, true]) {
+    const f = await fixture();
+    try {
+      f.options.desktopPid = 10;
+      f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+      const initial = processRow(42, f.options.executable) + processRow(90, f.options.executable);
+      const arrived = processRow(43, f.options.executable, undefined, indirect ? 44 : 10) + (indirect ? processRow(44, '/bin/helper', undefined, 10) : '');
+      f.processes(initial, initial + arrived);
+      f.stdin(tty(90)); await f.crumb(f.other);
+      assert.equal((await f.inspect()).status, 'owned');
+    } finally { await f.close(); }
+  }
+});
+
+test('the final census refreshes desktop runtime facts instead of freezing admission ownership', async () => {
+  const f = await fixture();
+  try {
+    let arrived = false;
+    f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+    f.options.ownedFacts = () => [{ pid: 42, sessionPath: f.target }, ...(arrived ? [{ pid: 43, sessionPath: f.other }] : [])];
+    const initial = processRow(42, f.options.executable) + processRow(90, f.options.executable);
+    f.processes(initial, initial + processRow(43, f.options.executable));
+    f.stdin(tty(90)); await f.crumb(f.other);
+    f.duringFileScan(async () => { arrived = true; });
+    assert.equal((await f.inspect()).status, 'owned');
+  } finally { await f.close(); }
+});
+
+test('a verified desktop presence holder ignores unrelated process churn without subprocesses', async () => {
+  const f = await fixture();
+  try {
+    const canonical = await realpath(f.target);
+    f.options.ownedPids = [42]; f.options.ownedSessionPaths = [f.target];
+    f.probe.presence = async () => ({ lock: 'held', discovery: { complete: true, processes: [{ pid: 42, processStartMs: 1, socketPath: '/owned', responsive: true, sessions: [{ sessionFile: canonical, sessionId: 'owned', cwd: f.root, state: 'idle', since: 1 }] }] } });
+    f.probe.run = async () => { throw new Error('Admission must not probe processes'); };
+    assert.equal((await f.inspect()).status, 'owned');
+  } finally { await f.close(); }
 });

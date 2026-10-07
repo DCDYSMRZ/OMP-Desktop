@@ -1,63 +1,42 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useBlockingOverlay } from "../lib/blocking-overlay";
-import { useGlassExit } from "../lib/portal-visibility";
 import { IconClose, IconCopy, IconDownload, IconPanelMaximize } from "./icons";
-import { portalOverlay, TooltipButton } from "./ui";
+import { portalOverlay, TooltipButton, useModalFocus } from "./ui";
+import { motion, useReducedMotion, useSurfaceMotion } from './motion';
 import "../styles/markdown-table.css";
+import { UserErrorNotice } from '../lib/UserErrorNotice';
 
 function TablePreview({ children, onClose }: {
   children: ReactNode;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const reduced = useReducedMotion();
   const dialogRef = useRef<HTMLDivElement>(null);
-  useGlassExit(dialogRef, true, true);
   const closeRef = useRef<HTMLButtonElement>(null);
-  useBlockingOverlay();
-  useLayoutEffect(() => {
-    const previousFocus = document.activeElement;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    closeRef.current?.focus();
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
-    };
-  }, []);
-  const handleKeyDown = (event: KeyboardEvent) => {
-    event.stopPropagation();
-    if (event.key === "Escape") {
-      event.preventDefault();
-      onClose();
-    }
-    if (event.key !== "Tab") return;
-    const focusable = dialogRef.current?.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])',
-    );
-    if (!focusable?.length) return;
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  };
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(true);
+  const close = () => setOpen(false);
+  useSurfaceMotion(backdropRef, open, 'fade');
+  useSurfaceMotion(dialogRef, open, 'scale');
+  useModalFocus(dialogRef, { onClose: close, initialFocus: closeRef });
+  useEffect(() => {
+    if (open) return;
+    const timer = window.setTimeout(onClose, reduced ? motion.reduced : motion.exit);
+    return () => window.clearTimeout(timer);
+  }, [open, onClose, reduced]);
   return portalOverlay(
     <div
-      className="overlay markdown-table-overlay"
+      ref={backdropRef}
+      className={`overlay markdown-table-overlay${open ? '' : ' is-leaving'}`}
       role="presentation"
-      onKeyDown={handleKeyDown}
       onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
+        if (event.target === event.currentTarget) close();
       }}
     >
       <div
         ref={dialogRef}
-        className="dialog markdown-table-preview lg-thick lg-refract lg-sheet lg-sheet-in"
+        className="dialog markdown-table-preview"
         role="dialog"
         aria-modal="true"
         aria-label={t("chat.tablePreview")}
@@ -69,9 +48,9 @@ function TablePreview({ children, onClose }: {
             type="button"
             className="icon-btn"
             tooltip={t("chat.closeTablePreview")}
-            onClick={onClose}
+            onClick={close}
           >
-            <IconClose size={16} />
+            <IconClose size="var(--icon-ui)" />
           </TooltipButton>
         </header>
         <div className="markdown-table-preview-body prose-chat">{children}</div>
@@ -88,12 +67,13 @@ export function MarkdownTable({ children, markdown, csv }: {
   const { t } = useTranslation();
   const [status, setStatus] = useState<{ message: string; error: boolean } | null>(null);
   const [preview, setPreview] = useState(false);
+  const closePreview = useCallback(() => setPreview(false), []);
   const copy = async () => {
     try {
       await window.ompDesktop.copyText(markdown);
       setStatus({ message: t("chat.tableCopied"), error: false });
     } catch (error) {
-      setStatus({ message: `${t("chat.tableCopyFailed")}: ${String(error)}`, error: true });
+      setStatus({ message: String(error), error: true });
     }
   };
   const download = () => {
@@ -106,7 +86,7 @@ export function MarkdownTable({ children, markdown, csv }: {
       document.body.append(link);
       link.click();
     } catch (error) {
-      setStatus({ message: `${t("chat.tableExportFailed")}: ${String(error)}`, error: true });
+      setStatus({ message: String(error), error: true });
     } finally {
       link.remove();
       // Keep the URL alive until the browser has consumed the download click.
@@ -124,7 +104,7 @@ export function MarkdownTable({ children, markdown, csv }: {
         tooltip={t("chat.copyTableMarkdown")}
         onClick={() => void copy()}
       >
-        <IconCopy size={14} />
+        <IconCopy size="var(--icon-meta)" />
       </TooltipButton>
       <TooltipButton
         type="button"
@@ -132,7 +112,7 @@ export function MarkdownTable({ children, markdown, csv }: {
         tooltip={t("chat.exportTableCsv")}
         onClick={download}
       >
-        <IconDownload size={14} />
+        <IconDownload size="var(--icon-meta)" />
       </TooltipButton>
       {!expanded ? (
         <TooltipButton
@@ -141,7 +121,7 @@ export function MarkdownTable({ children, markdown, csv }: {
           tooltip={t("chat.tablePreview")}
           onClick={() => setPreview(true)}
         >
-          <IconPanelMaximize size={14} />
+          <IconPanelMaximize size="var(--icon-meta)" />
         </TooltipButton>
       ) : null}
     </div>
@@ -149,10 +129,10 @@ export function MarkdownTable({ children, markdown, csv }: {
   return (
     <div className="markdown-table">
       {toolbar()}
-      {status ? <div role={status.error ? "alert" : "status"}>{status.message}</div> : null}
+      {status ? status.error ? <UserErrorNotice error={status.message} /> : <div role="status">{status.message}</div> : null}
       {children}
       {preview ? (
-        <TablePreview onClose={() => setPreview(false)}>
+        <TablePreview onClose={closePreview}>
           {toolbar(true)}
           {children}
         </TablePreview>

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseUnifiedDiff } from './unified-diff';
+import { diffWords, parseUnifiedDiff, reviewDiffRows } from './unified-diff';
 
 test('rename metadata is retained without becoming source lines', () => {
   const diff = parseUnifiedDiff('diff --git a/old.ts b/new.ts\nsimilarity index 100%\nrename from old.ts\nrename to new.ts\n');
@@ -51,4 +51,51 @@ test('oversized line previews retain honest totals and withhold incomplete hunks
   assert.equal(diff.additions, 5001);
   assert.equal(diff.deletions, 0);
   assert.deepEqual(diff.hunks, []);
+});
+
+test('word changes preserve unchanged words, punctuation, whitespace and unicode', () => {
+  const before = 'const 名称 = oldValue + 1; // stable';
+  const after = 'const 名称 = newValue + 2; // stable';
+  const words = diffWords(before, after);
+  assert.equal(words.before.map(word => word.text).join(''), before);
+  assert.equal(words.after.map(word => word.text).join(''), after);
+  assert.deepEqual(words.before.filter(word => word.changed).map(word => word.text), ['oldValue', '1']);
+  assert.deepEqual(words.after.filter(word => word.changed).map(word => word.text), ['newValue', '2']);
+});
+
+test('word comparison handles insertions, empty lines and repeated tokens', () => {
+  assert.deepEqual(diffWords('', 'hello').after, [{ text: 'hello', changed: true }]);
+  assert.deepEqual(diffWords('same', 'same').before, [{ text: 'same', changed: false }]);
+  const words = diffWords('a + a + b', 'a + b');
+  assert.equal(words.before.filter(word => word.changed).map(word => word.text).join(''), 'a + ');
+  assert.equal(words.after.some(word => word.changed), false);
+  assert.equal(diffWords('a b', 'a  b').after.filter(word => word.changed).map(word => word.text).join(''), '  ');
+});
+
+test('long lines retain their full content and stable edges without quadratic work', () => {
+  const before = 'start ' + 'a '.repeat(400) + 'end';
+  const after = 'start ' + 'b '.repeat(400) + 'end';
+  const words = diffWords(before, after);
+  assert.equal(words.before.map(word => word.text).join(''), before);
+  assert.equal(words.after.map(word => word.text).join(''), after);
+  assert.equal(words.before[0].changed, false);
+  assert.equal(words.after.at(-1)?.changed, false);
+  assert.equal(words.before.find(word => word.text === 'a')?.changed, true);
+});
+
+test('replacement pairing preserves surplus lines and never crosses context', () => {
+  const lines = parseUnifiedDiff('@@ -1,4 +1,3 @@\n-old one\n-old two\n+new one\n keep\n-last\n+final\n').hunks[0].lines;
+  const rows = reviewDiffRows(lines);
+  assert.equal(rows.length, 4);
+  assert.deepEqual(rows.map(row => row.kind === 'line' ? [row.before?.text, row.after?.text] : null), [
+    ['old one', 'new one'], ['old two', undefined], ['keep', 'keep'], ['last', 'final'],
+  ]);
+});
+
+test('collapsed context retains exact old and new line numbers for expansion', () => {
+  const lines = Array.from({ length: 8 }, (_, index) => ({ type: 'context' as const, text: `line ${index}`, oldLine: index + 3, newLine: index + 7 }));
+  const rows = reviewDiffRows(lines);
+  assert.equal(rows.length, 5);
+  assert.deepEqual(rows[2], { kind: 'context', id: 0, lines: lines.slice(2, 6) });
+  assert.deepEqual(reviewDiffRows(lines.slice(0, 4)).map(row => row.kind), ['line', 'line', 'line', 'line']);
 });

@@ -68,6 +68,7 @@ export class HistoryIndex {
     if (options.cwd !== undefined && (typeof options.cwd !== 'string' || !isAbsolute(options.cwd) || options.cwd.includes('\0'))) throw new Error('History workspace must be an absolute path');
     const roots = await resolveHistoryRoots(context);
     const candidates = new Set<string>();
+    const registered = new Set<string>();
     const diagnostics: HistorySourceDiagnostic[] = [];
     const budget = { count: 0 };
     const add = (path: string) => {
@@ -94,7 +95,9 @@ export class HistoryIndex {
         if (text === undefined) return;
         const path = text.trim();
         if (!isAbsolute(path) || /[\0\r\n]/.test(path)) throw new Error('Invalid native external-session registration');
-        add(resolve(path));
+        const target = resolve(path);
+        registered.add(target);
+        add(target);
       } catch (error) { diagnostics.push({ path: marker, kind: 'malformed', message: error instanceof Error ? error.message : String(error) }); }
     }, budget);
     if (budget.count > MAX_FILES * 3) diagnostics.push({ path: roots.sessions, kind: 'limit', message: 'History listing reached 30000 directory entries; retained results are partial. Open a source explicitly or narrow the profile.' });
@@ -138,6 +141,9 @@ export class HistoryIndex {
           if (!summary) throw new Error('Native session header is missing or exceeds the 64 KiB preview window');
         } finally { source.close(); }
       } catch (error) {
+        // Native gc-cli.ts:353–370 skips unmaterialized/deleted registry targets.
+        // Existing malformed or inaccessible sources still produce diagnostics.
+        if (registered.has(candidate) && isMissing(error)) continue;
         diagnostics.push({ path, kind: 'unavailable', message: error instanceof Error ? error.message : String(error) });
         continue;
       }

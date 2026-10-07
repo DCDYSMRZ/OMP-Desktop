@@ -98,7 +98,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
 }
 
 .composer-image-preview-viewport {
@@ -129,7 +129,7 @@
 
 .composer-image-preview-status {
   margin-block: auto;
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
 }
 
 .composer-image-preview-controls {
@@ -142,7 +142,7 @@
   padding: 4px;
   border-radius: var(--radius-lg);
   background: var(--gray-800);
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
 }
 
 .composer-image-preview button,
@@ -171,49 +171,3 @@
   .composer-image-preview { padding: 16px; gap: 12px; }
 }
 
-.native-image-preview {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 48px;
-  background: var(--lg-scrim);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
-
-.native-image-preview-frame {
-  display: flex;
-  max-width: 100%;
-  max-height: 100%;
-  border-radius: 14px;
-  padding: 6px;
-}
-
-.native-image-preview-frame > img {
-  min-width: 0;
-  max-width: 100%;
-  max-height: calc(100dvh - 108px);
-  object-fit: contain;
-  border-radius: 9px;
-}
-
-.native-image-preview > button {
-  position: absolute;
-  right: 20px;
-  top: 20px;
-}
-
-@media (max-width: 600px) {
-  .native-image-preview { padding: 48px 16px; }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .native-image-preview {
-    background: var(--ds-bg-primary);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-}

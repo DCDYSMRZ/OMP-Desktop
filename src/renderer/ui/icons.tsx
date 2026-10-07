@@ -1,4 +1,4 @@
-import type { CSSProperties, SVGProps } from "react";
+import type { SVGProps } from "react";
 import {
   Activity,
   AppWindow,
@@ -96,46 +96,45 @@ import {
   Workflow,
   Wrench,
   X,
+  ArrowRight,
+  Braces,
+  CircleDashed,
+  CircleDot,
+  CircleSlash,
+  CircleX,
+  CornerDownRight,
+  FileCode,
+  FilePen,
+  FilePlus2,
+  FileSearch,
+  FolderSearch,
+  History,
+  Hourglass,
+  Layers,
+  ListTodo,
+  LoaderCircle,
+  LocateFixed,
+  MessagesSquare,
+  ScrollText,
+  Send,
+  SquareTerminal,
+  Users,
   type LucideIcon,
   type LucideProps,
 } from "lucide-react";
 
-export type IconProps = LucideProps;
+export type IconProps = Omit<LucideProps, "size"> & { size?: "var(--icon-caption)" | "var(--icon-meta)" | "var(--icon-ui)" | "var(--icon-heading)" };
 
-/**
- * Lucide sizes are fixed px attributes. Multiply them by `--font-scale` so
- * chrome glyphs stay in proportion with the Appearance type scale (D343).
- */
-function scaledIconBox(size: IconProps["size"] = 16): string {
-  if (typeof size === "number" && Number.isFinite(size)) {
-    return `calc(${size}px * var(--font-scale))`;
-  }
-  if (typeof size === "string" && size.trim()) {
-    const value = size.trim();
-    return /[a-z%]+$/i.test(value)
-      ? `calc(${value} * var(--font-scale))`
-      : `calc(${value}px * var(--font-scale))`;
-  }
-  return "calc(16px * var(--font-scale))";
-}
-
-function withScaledIconStyle(
-  size: IconProps["size"],
-  style?: CSSProperties,
-): CSSProperties {
-  const box = scaledIconBox(size);
-  return { width: box, height: box, ...style };
-}
 
 /* Defaults (16px, 1.75 stroke) match the app's previous hand-drawn icon set. */
 function icon(Lucide: LucideIcon) {
-  return function Icon({ size = 16, style, ...props }: IconProps) {
+  return function Icon({ size = "var(--icon-ui)", style, ...props }: IconProps) {
     return (
       <Lucide
         size={size}
         strokeWidth={1.75}
         {...props}
-        style={withScaledIconStyle(size, style)}
+        style={{ width: size, height: size, minWidth: size, minHeight: size, ...style }}
       />
     );
   };
@@ -249,33 +248,33 @@ export const IconTriangleAlert = icon(TriangleAlert);
 export const IconEye = icon(Eye);
 export const IconEyeOff = icon(EyeOff);
 
-export function IconStop({ size = 16, style, ...props }: IconProps) {
+export function IconStop({ size = "var(--icon-ui)", style, ...props }: IconProps) {
   return (
     <Square
       size={size}
-      strokeWidth={0}
+      strokeWidth={1.75}
       fill="currentColor"
       {...props}
-      style={withScaledIconStyle(size, style)}
+      style={{ width: size, height: size, minWidth: size, minHeight: size, ...style }}
     />
   );
 }
 
-/* Heavy round-capped stroke renders Lucide's Dot at the old filled-dot size. */
-export function IconDot({ size = 16, style, ...props }: IconProps) {
+/** Status dot uses the same stroke as the rest of the icon family. */
+export function IconDot({ size = "var(--icon-ui)", style, ...props }: IconProps) {
   return (
     <Dot
       size={size}
-      strokeWidth={6.5}
+      strokeWidth={1.75}
       {...props}
-      style={withScaledIconStyle(size, style)}
+      style={{ width: size, height: size, minWidth: size, minHeight: size, ...style }}
     />
   );
 }
 
 /** VS Code brand mark (settings open-target pill) — logos stay custom, no Lucide equivalent. */
-export function IconVSCode(props: SVGProps<SVGSVGElement> & { size?: number }) {
-  const { size = 14, style, ...rest } = props;
+export function IconVSCode(props: SVGProps<SVGSVGElement> & { size?: IconProps["size"] }) {
+  const { size = "var(--icon-meta)", style, ...rest } = props;
   return (
     <svg
       width={size}
@@ -285,7 +284,7 @@ export function IconVSCode(props: SVGProps<SVGSVGElement> & { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
       {...rest}
-      style={withScaledIconStyle(size, style)}
+      style={{ width: size, height: size, minWidth: size, minHeight: size, ...style }}
     >
       <path
         d="M17.5 2.6 21 4.2v15.6l-3.5 1.6-9.2-7.2L3 17V7l5.3-2.8 9.2 7.2V2.6Z"
@@ -304,3 +303,28 @@ export function IconVSCode(props: SVGProps<SVGSVGElement> & { size?: number }) {
     </svg>
   );
 }
+
+/* Transcript timeline, tool steps and subagent roster (2026-09 redesign). */
+export const IconArrowRight = icon(ArrowRight);
+export const IconBraces = icon(Braces);
+export const IconCircleDashed = icon(CircleDashed);
+export const IconCircleDot = icon(CircleDot);
+export const IconCircleSlash = icon(CircleSlash);
+export const IconCircleX = icon(CircleX);
+export const IconCornerDownRight = icon(CornerDownRight);
+export const IconFileCode = icon(FileCode);
+export const IconFilePen = icon(FilePen);
+export const IconFilePlus = icon(FilePlus2);
+export const IconFileSearch = icon(FileSearch);
+export const IconFolderSearch = icon(FolderSearch);
+export const IconHistory = icon(History);
+export const IconHourglass = icon(Hourglass);
+export const IconLayers = icon(Layers);
+export const IconListTodo = icon(ListTodo);
+export const IconLoader = icon(LoaderCircle);
+export const IconLocate = icon(LocateFixed);
+export const IconMessages = icon(MessagesSquare);
+export const IconScrollText = icon(ScrollText);
+export const IconSend = icon(Send);
+export const IconSquareTerminal = icon(SquareTerminal);
+export const IconUsers = icon(Users);

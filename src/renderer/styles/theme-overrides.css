@@ -15,9 +15,9 @@
 .page-title {
   margin: 0;
   color: var(--ds-text-primary);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-strong);
-  letter-spacing: var(--tracking-tighter);
+  font-size: var(--text-display);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-title);
 }
 
 .page-card {
@@ -46,6 +46,12 @@
 }
 
 /* LIGHT_CODEX_OVERRIDES — density/chrome tweaks on top of semantic tokens */
+:root[data-theme="light"] .composer-shell {
+  /* WorkBuddy-style restraint: one solid plate, no decorative gradient. */
+  background: var(--ds-bg-composer);
+  background-image: none;
+  border: 0;
+}
 
 /* Home and thread-docked composers share the base shell metrics. The home
  * variant only controls placement and placeholder copy; visual spacing stays
@@ -128,10 +134,10 @@
   border-radius: var(--radius-sm);
   padding: 5px 8px;
   color: var(--ds-text-muted);
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
   font-variant-numeric: tabular-nums;
   letter-spacing: var(--tracking-normal);
-  line-height: var(--leading-none);
+  line-height: var(--leading-ui);
   transition: background var(--motion-duration-fast) var(--motion-ease-out),
     color var(--motion-duration-fast) var(--motion-ease-out);
 }
@@ -202,7 +208,7 @@
   border-radius: var(--radius-full) !important;
   color: var(--ds-text-secondary) !important;
   /* Keep labels fully inked; tight line-height under overflow clips descenders. */
-  line-height: var(--leading-compact);
+  line-height: var(--leading-ui);
   overflow: visible;
   white-space: nowrap;
 }
@@ -235,7 +241,7 @@
 .composer-mode-chip-label,
 .composer-model-thinking-model,
 .composer-model-thinking-level {
-  line-height: var(--leading-compact);
+  line-height: var(--leading-ui);
 }
 
 .mode-chip:hover {
@@ -260,7 +266,7 @@
 .composer-right .icon-btn {
   max-width: 220px;
   color: var(--ds-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
 }
 
 .composer-plus {
@@ -275,8 +281,8 @@
   border-radius: var(--radius-md);
   padding: 8px 10px;
   color: var(--ds-text-primary);
-  font-size: var(--text-md);
-  line-height: var(--leading-compact);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-ui);
   text-align: left;
   cursor: pointer;
   transition: background var(--motion-duration-fast) var(--motion-ease-out);

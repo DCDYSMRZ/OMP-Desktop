@@ -1,0 +1,38 @@
+/* Plan content is only mounted inside the composer's anchored popover. */
+.todo-dock { min-width: 0; color: var(--tl-ink); }
+.todo-dock-popover-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.todo-dock-popover-heading strong { color: var(--tl-ink-strong); font-size: var(--text-ui); font-weight: var(--font-weight-medium); }
+.todo-dock-popover-heading > span, .todo-dock-popover-summary { color: var(--tl-ink-meta); font-size: var(--text-meta); }
+.todo-dock-popover-summary { margin: 6px 0 12px; }
+.todo-dock-phase-heading { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; min-height: 28px; border: 0; background: none; padding: 7px 6px; text-align: left; font: inherit; font-size: var(--text-secondary); line-height: var(--leading-ui); color: var(--tl-ink); cursor: pointer; border-radius: var(--tl-radius-row); transition: background var(--motion-duration-fast), transform var(--motion-duration-fast); }
+.todo-dock-phase-heading:hover { background: var(--tl-surface-hover); }
+.todo-dock-phase-heading:active { transform: scale(.98); }
+.todo-dock-phase-heading:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: -2px; }
+.todo-dock svg { width: 14px; height: 14px; flex: none; }
+.todo-dock-count, .todo-dock-phase-current { flex: none; white-space: nowrap; font-size: var(--text-meta); color: var(--tl-ink-meta); }
+.todo-dock-count { font-variant-numeric: tabular-nums; }
+.todo-dock-phase-name { min-width: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.todo-dock-caret { color: var(--tl-ink-meta); transition: transform var(--motion-duration-fast) var(--ease-standard); }
+[aria-expanded="true"] > .todo-dock-caret { transform: rotate(90deg); }
+.todo-dock-scroll { overscroll-behavior: contain; }
+.todo-dock-phase.is-current .todo-dock-phase-name { color: var(--tl-ink-strong); font-weight: var(--font-weight-medium); }
+.todo-dock-tasks, .todo-dock-blockers { list-style: none; margin: 0; padding: 0 8px 5px 26px; }
+.todo-dock-task { display: flex; align-items: start; gap: 9px; padding: 5px 0; font-size: var(--text-secondary); line-height: var(--leading-ui); }
+.todo-dock-task-status { width: 14px; height: 19px; display: flex; align-items: center; justify-content: center; flex: none; color: var(--tl-ink-meta); }
+.todo-dock-task[data-status="in_progress"] .todo-dock-task-status { color: var(--tl-ink-strong); }
+.todo-dock-task[data-status="completed"] .todo-dock-task-status { color: var(--ds-success); }
+.todo-dock-task[data-status="blocked"] .todo-dock-task-status { color: var(--ds-warning); }
+.todo-dock-task-body { min-width: 0; overflow-wrap: anywhere; }
+.todo-dock-task[data-status="in_progress"] .todo-dock-task-content { color: var(--tl-ink-strong); }
+.todo-dock-task[data-status="completed"] .todo-dock-task-content { color: var(--tl-ink-meta); text-decoration: line-through; text-decoration-color: var(--tl-rail); }
+.todo-dock-task[data-status="abandoned"] .todo-dock-task-content { color: var(--tl-ink-meta); }
+.todo-dock-blocker-reason, .todo-dock-task-detail { display: block; margin-top: 3px; font-size: var(--text-meta); color: var(--tl-ink-meta); white-space: pre-wrap; }
+.todo-dock-blocker-reason { color: var(--ds-warning); }
+.todo-dock-blockers li { display: flex; align-items: start; gap: 9px; padding: 4px 0; font-size: var(--text-secondary); line-height: var(--leading-ui); overflow-wrap: anywhere; }
+.todo-dock-blockers svg { margin-top: 2px; color: var(--ds-warning); }
+@media (prefers-reduced-motion: reduce) {
+  .todo-dock-task-completed .todo-dock-task-status svg, .todo-dock-task-completed .todo-dock-task-content, .todo-dock-phase-advance, .todo-dock .ui-enter { animation: none; }
+  .todo-dock .ui-live-dot::after { animation: none; }
+  .todo-dock-caret, .todo-dock .ui-collapse { transition: none; }
+  .todo-dock-phase-heading:active { transform: none; }
+}

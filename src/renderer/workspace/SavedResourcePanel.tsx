@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { SessionResourcePage } from '../../shared/contracts';
+import type { SessionResourceContext, SessionResourcePage } from '../../shared/contracts';
 import { ImagePreview } from '../chat/ImagePreview';
 import { partitionSourceDiagnostics } from '../chat/message-details';
 import { HighlightedCode } from '../ui/Markdown';
+import { CodeView } from '../ui/CodeView';
 import { IconChevronLeft, IconChevronRight } from '../ui/icons';
 import { Button, TooltipButton } from '../ui/ui';
 
@@ -13,18 +14,16 @@ const readingStates = new Map<string, ReadingState>();
 
 interface SavedResourcePanelProps {
   resourceId: string;
-  parentPath?: string;
-  subagentId?: string;
-  leafId?: string | null;
+  context?: SessionResourceContext;
   reference?: string;
   visible: boolean;
   onName: (resourceId: string, name: string) => void;
   onOpenSessionResource?: (reference: string) => void;
 }
 
-export function SavedResourcePanel({ resourceId, parentPath, subagentId, leafId, reference, visible, onName, onOpenSessionResource }: SavedResourcePanelProps) {
+export function SavedResourcePanel({ resourceId, context, reference, visible, onName, onOpenSessionResource }: SavedResourcePanelProps) {
   const { t } = useTranslation();
-  const readingKey = JSON.stringify({ parentPath, subagentId, leafId, reference });
+  const readingKey = JSON.stringify({ context, reference });
   const reading = useRef<ReadingState>(readingStates.get(readingKey) ?? { index: 0, cursors: [undefined], positions: [] });
   const [index, setIndex] = useState(reading.current.index);
   const [attempt, setAttempt] = useState(0);
@@ -35,7 +34,8 @@ export function SavedResourcePanel({ resourceId, parentPath, subagentId, leafId,
   const [preview, setPreview] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const ready = useRef(false);
-  const missingSource = !parentPath || !reference;
+  const missingSource = !context || !reference;
+  const displayTitle = page?.display?.title || (page?.name.startsWith('Entry ') ? t('omp.resource.title') : page?.name) || t('omp.resource.title');
 
   useEffect(() => () => {
     readingStates.delete(readingKey); readingStates.set(readingKey, reading.current);
@@ -45,9 +45,9 @@ export function SavedResourcePanel({ resourceId, parentPath, subagentId, leafId,
   useEffect(() => {
     let active = true;
     ready.current = false; setLoading(true); setPage(null); setError(''); setImageError(false); setPreview(false);
-    if (!parentPath || !reference) { setLoading(false); return; }
+    if (!context || !reference) { setLoading(false); return; }
     const cursor = reading.current.cursors[index];
-    void window.ompDesktop.readSessionArtifact({ parentPath, reference, ...(subagentId === undefined ? {} : { subagentId }), ...(leafId === undefined ? {} : { leafId }), ...(cursor === undefined ? {} : { cursor }) }).then(value => {
+    void window.ompDesktop.readSessionArtifact({ context, reference, ...(cursor === undefined ? {} : { cursor }) }).then(value => {
       if (!active) return;
       // A changed continuation invalidates only forward navigation, not the current reading anchor.
       if (reading.current.cursors[index + 1] !== value.nextCursor) {
@@ -57,8 +57,8 @@ export function SavedResourcePanel({ resourceId, parentPath, subagentId, leafId,
       setPage(value); setLoading(false);
     }, cause => { if (active) { setError(String(cause)); setLoading(false); } });
     return () => { active = false; };
-  }, [parentPath, subagentId, leafId, reference, index, attempt]);
-  useEffect(() => { if (page?.name) onName(resourceId, page.name); }, [page?.name, resourceId, onName]);
+  }, [readingKey, index, attempt]);
+  useEffect(() => { if (page) onName(resourceId, displayTitle); }, [page, displayTitle, resourceId, onName]);
 
   const restorePosition = () => {
     const node = scrollRef.current;
@@ -86,22 +86,22 @@ export function SavedResourcePanel({ resourceId, parentPath, subagentId, leafId,
   const diagnostics = partitionSourceDiagnostics(page?.diagnostics ?? []);
 
   return <section className="file-viewer saved-resource-panel" aria-label={t('omp.resource.title', { defaultValue: 'Saved output' })}>
-    <header className="file-viewer-header"><span className="file-viewer-path" title={page?.name ?? reference}>{page?.name ?? t('omp.resource.title', { defaultValue: 'Saved output' })}</span>{page && (diagnostics.material.length > 0 || imageError) && <Button disabled={loading} onClick={() => setAttempt(value => value + 1)}>{t('omp.resource.retry', { defaultValue: 'Retry' })}</Button>}</header>
+    <header className="file-viewer-header"><span className="file-viewer-path" title={displayTitle}>{displayTitle}</span>{page && (diagnostics.material.length > 0 || imageError) && <Button disabled={loading} onClick={() => setAttempt(value => value + 1)}>{t('omp.resource.retry', { defaultValue: 'Retry' })}</Button>}</header>
     <div ref={scrollRef} className="file-viewer-body saved-resource-body" tabIndex={0} aria-busy={loading} onScroll={event => {
       if (visible && ready.current && !loading) reading.current.positions[index] = { top: event.currentTarget.scrollTop, left: event.currentTarget.scrollLeft };
     }}>
       {loading ? <p className="file-tree-note" role="status">{t('omp.resource.loading', { defaultValue: 'Loading saved output…' })}</p> : missingSource ? <p className="file-tree-note" role="alert">{t('omp.resource.missingSource', { defaultValue: 'Saved output requires an authorized parent session and reference.' })}</p> : error ? <div className="saved-resource-notice"><p role="alert">{error}</p><Button onClick={() => setAttempt(value => value + 1)}>{t('omp.resource.retry', { defaultValue: 'Retry' })}</Button></div> : page && <>
-        <details className="saved-resource-source"><summary>{page.sourceLabel}</summary><div>{parentPath}</div><code>{reference}</code>{diagnostics.information.map(message => <p key={message}>{message}</p>)}</details>
         {diagnostics.material.length > 0 && <ul className="saved-resource-diagnostics" aria-live="polite">{diagnostics.material.map(message => <li key={message}>{message}</li>)}</ul>}
         {!!page.imageReferences?.length && <div className="message-attachments">{page.imageReferences.map((image, index) => <button type="button" key={image.reference} className="composer-chip chat-file-chip" disabled={!onOpenSessionResource} title={image.reference} onClick={() => onOpenSessionResource?.(image.reference)}>{t('omp.chat.viewSavedImage')}{page.imageReferences!.length > 1 ? ` ${index + 1}` : ''}</button>)}</div>}
-        {page.kind === 'text' ? page.content ? <pre className="file-viewer-code saved-resource-code"><code><HighlightedCode code={page.content} /></code></pre> : <p className="file-tree-note">{t('omp.resource.empty', { defaultValue: 'This saved text page is empty.' })}</p> : page.kind === 'image' ? imageSource && !imageError ? <div className="file-viewer-image"><button type="button" className="saved-resource-image" aria-label={t('omp.resource.preview', { defaultValue: 'Enlarge saved image' })} onClick={() => setPreview(true)}><img src={imageSource} alt={page.name} onLoad={restorePosition} onError={() => setImageError(true)} /></button></div> : <p className="file-tree-note" role="alert">{imageError ? t('omp.resource.imageError', { defaultValue: 'The saved image could not be decoded.' }) : t('omp.resource.imageUnavailable', { defaultValue: 'The saved image is unavailable or exceeds the preview limit.' })}</p> : <p className="file-tree-note">{t('omp.resource.binary', { defaultValue: 'Binary saved output cannot be displayed as text.' })}</p>}
+        {page.kind === 'text' ? page.display ? <div className="saved-resource-readable">{page.display.content ? <CodeView code={page.display.content} lang={page.display.language} gutter={false} wrap /> : <p className="file-tree-note">{t('omp.resource.empty')}</p>}{page.display.truncated && <p className="saved-resource-notice">{t('tools.readablePreviewLimited')}</p>}</div> : page.name.startsWith('Entry ') ? <p className="saved-resource-notice">{t('tools.readablePreviewUnavailable')}</p> : page.content ? <div className="saved-resource-readable"><CodeView code={page.content} gutter={false} wrap /></div> : <p className="file-tree-note">{t('omp.resource.empty')}</p> : page.kind === 'image' ? imageSource && !imageError ? <div className="file-viewer-image"><button type="button" className="saved-resource-image" aria-label={t('omp.resource.preview', { defaultValue: 'Enlarge saved image' })} onClick={() => setPreview(true)}><img src={imageSource} alt={page.name} onLoad={restorePosition} onError={() => setImageError(true)} /></button></div> : <p className="file-tree-note" role="alert">{imageError ? t('omp.resource.imageError') : t('omp.resource.imageUnavailable')}</p> : <p className="file-tree-note">{t('omp.resource.binary')}</p>}
+        <details className="saved-resource-source"><summary>{t('tools.technicalDetails')}</summary><div>{page.name}</div><div>{page.sourceLabel}</div><div>{context?.kind === 'saved' ? context.parentPath : context?.runtimeId}</div><code>{reference}</code>{diagnostics.information.map(message => <p key={message}>{message}</p>)}{page.kind === 'text' && (page.display || page.name.startsWith('Entry ')) && <pre className="file-viewer-code saved-resource-code"><code><HighlightedCode code={page.content ?? ''} lang="json" /></code></pre>}</details>
         {repeatedCursor && <p className="saved-resource-notice" role="alert">{t('omp.resource.cursorError', { defaultValue: 'The source returned a repeated page cursor. Read from the beginning to reload it.' })}</p>}
       </>}
     </div>
     <footer className="file-viewer-header saved-resource-navigation">
-      <TooltipButton type="button" className="icon-btn icon-btn-square" tooltip={earlier} ariaLabel={earlier} disabled={loading || index === 0} onClick={() => navigate(index - 1)}><IconChevronLeft size={16} /></TooltipButton>
+      <TooltipButton type="button" className="icon-btn icon-btn-square" tooltip={earlier} ariaLabel={earlier} disabled={loading || index === 0} onClick={() => navigate(index - 1)}><IconChevronLeft size="var(--icon-ui)" /></TooltipButton>
       <div className="saved-resource-page" role="status"><span>{t('omp.resource.page', { defaultValue: 'Page {{page}}', page: index + 1 })}</span>{page && !loading && <span>{page.nextCursor ? t('omp.resource.more', { defaultValue: 'More saved output available' }) : t('omp.resource.end', { defaultValue: 'Last available page' })}</span>}</div>
-      <TooltipButton type="button" className="icon-btn icon-btn-square" tooltip={later} ariaLabel={later} disabled={loading || !page?.nextCursor || repeatedCursor} onClick={() => { if (page?.nextCursor) { reading.current.cursors[index + 1] = page.nextCursor; navigate(index + 1); } }}><IconChevronRight size={16} /></TooltipButton>
+      <TooltipButton type="button" className="icon-btn icon-btn-square" tooltip={later} ariaLabel={later} disabled={loading || !page?.nextCursor || repeatedCursor} onClick={() => { if (page?.nextCursor) { reading.current.cursors[index + 1] = page.nextCursor; navigate(index + 1); } }}><IconChevronRight size="var(--icon-ui)" /></TooltipButton>
       {(error || repeatedCursor) && !missingSource && <Button disabled={loading} onClick={restart}>{t('omp.resource.restart', { defaultValue: 'Read from beginning' })}</Button>}
     </footer>
     {preview && visible && imageSource && page && <ImagePreview source={imageSource} name={page.name} onClose={() => setPreview(false)} />}

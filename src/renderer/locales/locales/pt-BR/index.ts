@@ -126,7 +126,6 @@ export const ptBR = {
     devDisabled: "As atualizações estão desativadas em compilações de desenvolvimento."
   },
   nav: {
-    pinnedSessions: "Fixadas",
     home: "Início",
     newTask: "Nova tarefa",
     newProject: "Novo projeto",

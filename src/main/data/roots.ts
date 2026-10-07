@@ -9,7 +9,7 @@ import { normalizeProfile } from './preferences';
 const DIRECTORY_KEYS = ['PI_CONFIG_DIR', 'PI_CODING_AGENT_DIR', 'XDG_DATA_HOME', 'XDG_STATE_HOME'] as const;
 
 /** Native 18.3.2 utils/dirs.ts and utils/env.ts semantics, without migration helpers. */
-export async function resolveHistoryRoots(context: ExecutionContext): Promise<{ sessions: string; archives: string; registry: string; blobs: string; terminals: string }> {
+export async function resolveAgentRoots(context: ExecutionContext) {
   const env = { ...context.env };
   const home = env.HOME || homedir();
   const profile = normalizeProfile(context.profile || (env.OMP_PROFILE !== undefined ? env.OMP_PROFILE : env.PI_PROFILE));
@@ -38,6 +38,11 @@ export async function resolveHistoryRoots(context: ExecutionContext): Promise<{ 
   const root = profile ? join(home, env.PI_CONFIG_DIR || '.omp', 'profiles', profile) : join(home, env.PI_CONFIG_DIR || '.omp');
   const defaultAgent = join(root, 'agent');
   const agent = !profile && env.PI_CODING_AGENT_DIR ? resolve(context.cwd, env.PI_CODING_AGENT_DIR) : defaultAgent;
+  return { agent, defaultAgent, env, profile };
+}
+
+export async function resolveHistoryRoots(context: ExecutionContext): Promise<{ sessions: string; archives: string; registry: string; blobs: string; terminals: string }> {
+  const { agent, defaultAgent, env, profile } = await resolveAgentRoots(context);
   async function category(key: 'XDG_DATA_HOME' | 'XDG_STATE_HOME'): Promise<string> {
     if (agent !== defaultAgent || !['darwin', 'linux'].includes(process.platform) || !env[key]) return agent;
     const root = resolve(context.cwd, env[key]!);

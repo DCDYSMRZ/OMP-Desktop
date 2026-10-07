@@ -15,43 +15,6 @@
 :root,
 :root[data-theme="dark"] {
   color-scheme: dark;
-  /* Liquid Glass — lava control material and channel palette. */
-  --lg-canvas: color-mix(in oklab,#161618 94%,transparent);
-  --lg-canvas-solid: #161618;
-  --lg-tint-thin: color-mix(in oklab,#1c1c20 38%,transparent);
-  --lg-tint-regular: color-mix(in oklab,#1c1c20 55%,transparent);
-  --lg-tint-thick: color-mix(in oklab,#1c1c20 78%,transparent);
-  --lg-blur-thin: 12px;
-  --lg-blur-regular: 24px;
-  --lg-blur-thick: 34px;
-  --lg-saturate: 1.45;
-  --lg-edge-top: rgba(255,255,255,.14);
-  --lg-edge-bottom: rgba(255,255,255,.04);
-  --lg-stroke: rgba(255,255,255,.08);
-  --lg-stroke-strong: rgba(255,255,255,.16);
-  --lg-specular: rgba(255,255,255,.10);
-  --lg-shadow-thin: 0 1px 2px rgba(0,0,0,.35);
-  --lg-shadow-regular: 0 8px 24px rgba(0,0,0,.35), 0 1px 2px rgba(0,0,0,.4);
-  --lg-shadow-thick: 0 18px 48px rgba(0,0,0,.45), 0 2px 6px rgba(0,0,0,.4);
-  --lg-scrim: rgba(0,0,0,.28);
-  --liq-hot: #ffe3a3;
-  --liq-core: #ff9a3c;
-  --liq-mid: #f2542d;
-  --liq-deep: #9e1f14;
-  --liq-glow: rgba(255,120,40,.55);
-  --liq-sheen: rgba(255,230,180,.55);
-  --liq-crystal: #f6b04a;
-  --liq-cooled: #4a403c;
-  --liq-pool-alpha: .55;
-  --liq-flow-speed: 26;
-  --liq-wave-period: 2.6s;
-  --lg-radius-control: 12px;
-  --lg-radius-pane: 18px;
-  --lg-radius-sheet: 22px;
-  --lg-radius-capsule: 999px;
-  --lg-spring: cubic-bezier(.2,.9,.25,1.12);
-  --lg-ease-out: cubic-bezier(.2,.8,.2,1);
-
   --gray-0: #ffffff;
   --gray-50: #f9f9f9;
   --gray-75: #f3f3f3;
@@ -142,6 +105,7 @@
   --ds-accent-soft: var(--gray-300);
   /* Focus rings / resize affordances. Tied to the accent so themes stay monochrome. */
   --ds-focus: var(--ds-accent);
+  --ds-focus-underlay: var(--ds-bg-primary);
   /* Settings fields and shared inset searches keep their built-in tones. */
   --ds-settings-field-bg: #212121;
   --ds-settings-nav-active: color-mix(in oklab, var(--gray-0) 10%, transparent);
@@ -181,7 +145,7 @@
   --ds-error: #ff6764;
   --ds-info: var(--gray-300);
   --ds-purple: #c27aff;
-  --ds-shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.55);
+  --ds-shadow-dialog: 0 8px 24px rgba(0, 0, 0, 0.32);
   --ds-shadow-model-menu: var(--ds-shadow-dialog);
   /* Codex --elevation-prominent (same stroke+lift in dark and light) */
   --ds-elevation-stroke: 0 0 0 0.5px color-mix(in oklab, var(--gray-0) 12%, transparent);
@@ -192,23 +156,23 @@
   /* Settings rail border-box width, including its 1px right border. The
    * settings drag band starts after the rail so the rail keeps a single
    * surface tone from the window top edge down. */
-  --ds-settings-nav-width: 275px;
-  --ds-toolbar-height: 46px;
+  --ds-settings-nav-width: clamp(220px, 21vw, 275px);
+  --ds-toolbar-height: max(52px, calc(30px + var(--text-ui) * var(--leading-ui)));
   /* Square icon-only control. `.icon-btn` takes its width from its label, so an
      icon-only use pins both axes to this token instead. */
-  --ds-control-size: 28px;
+  --ds-control-size: max(28px, calc(var(--text-ui) + 12px));
   /* The field metric: one height for a text input, a native select and the
      dropdowns that act as form fields, so a control can never look like a
      different-sized box than the input beside it. Derived from the single-line
-     field box (9px + 9px padding around one `--leading-body` line at
-     `--text-base`) so it follows the Appearance font scale instead of pinning
+     field box (9px + 9px padding around one `--leading-ui` line at
+     `--text-ui`) so it follows the Appearance font scale instead of pinning
      a px value that drifts once type is resized. Dense nested surfaces — the
      subagent sheet's row body, a compact menu search — and the import toolbar,
      whose row holds small buttons and no field, declare their own metric. */
-  --ds-field-height: calc(18px + var(--text-base) * var(--leading-body));
+  --ds-field-height: calc(18px + var(--text-ui) * var(--leading-ui));
   /* Work-panel controls share these geometry tokens so the header's safe lane
      cannot drift away from the viewport-fixed toggle. */
-  --ds-work-panel-toggle-size: 28px;
+  --ds-work-panel-toggle-size: var(--ds-control-size);
   --ds-work-panel-toggle-inset: 12px;
   /* The one gap between adjacent controls in the panel header row: the tab
      strip to the action group, between `+` and maximize, and — through the
@@ -241,55 +205,66 @@
   --ds-composer-radius-lg: var(--radius-xl);
 
   /* Motion tokens (design-system §8) */
-  --motion-duration-fast: 150ms;
-  --motion-duration-normal: 200ms;
-  --motion-duration-slow: 300ms;
-  --motion-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --motion-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --motion-duration-fast: 120ms;
+  --motion-duration-base: 180ms;
+  --motion-duration-gentle: 320ms;
+  --motion-duration-reduced: 80ms;
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-enter: cubic-bezier(0.2, 0, 0, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: linear(0, 0.32 12%, 0.64 26%, 0.86 43%, 0.97 65%, 1);
+  --motion-duration-normal: 180ms;
+  --motion-duration-slow: 240ms;
+  --motion-ease-out: var(--motion-ease-standard);
+  --motion-ease-in: var(--motion-ease-standard);
   --motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --motion-duration-enter: 180ms;
+  --motion-duration-expand: 180ms;
+  --motion-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /*
+    Transcript roles (2026-09 redesign): timeline, tool steps, subagent roster.
+    Hierarchy is carried by tone and spacing, never 1px in-flow outlines.
+    --tl-ink-meta is the dimmest ink allowed for readable text (≈6.3:1 on
+    #181818); --tl-ink-quiet is for rails, carets and decoration only.
+  */
+  --tl-ink-strong: var(--ds-text-primary);
+  --tl-ink: var(--ds-text-secondary);
+  --tl-ink-meta: color-mix(in oklab, var(--gray-0) 58%, transparent);
+  --tl-ink-quiet: color-mix(in oklab, var(--gray-0) 34%, transparent);
+  --tl-surface: color-mix(in oklab, var(--gray-0) 3%, transparent);
+  --tl-surface-hover: color-mix(in oklab, var(--gray-0) 5.5%, transparent);
+  --tl-surface-strong: color-mix(in oklab, var(--gray-0) 7.5%, transparent);
+  --tl-surface-selected: color-mix(in oklab, var(--gray-0) 9%, transparent);
+  --tl-code-bg: color-mix(in oklab, #000 30%, var(--gray-900));
+  --tl-rail: color-mix(in oklab, var(--gray-0) 10%, transparent);
+  --tl-agent: var(--ds-purple);
+  --tl-agent-soft: color-mix(in oklab, var(--ds-purple) 16%, transparent);
+  --tl-success-soft: color-mix(in oklab, var(--ds-success) 14%, transparent);
+  --tl-error-soft: color-mix(in oklab, var(--ds-error) 14%, transparent);
+  --tl-warning-soft: color-mix(in oklab, var(--ds-warning) 14%, transparent);
+  --tl-radius-row: var(--radius-xs);
+  --tl-radius-block: var(--radius-md);
+  --tl-row-height: calc(30px * var(--font-scale));
   /* Global type scale (D343). 1 = product ramp; Appearance multiplies --text-*. */
   --font-scale: 1;
+  --ds-space-1: 4px;
+  --ds-space-2: 8px;
+  --ds-space-3: 12px;
+  --ds-space-4: 16px;
+  --ds-space-6: 24px;
+  --ds-hit-min: 24px;
+  --ds-layer-decoration: 0;
+  --ds-layer-base: 1;
+  --ds-layer-chrome: 20;
+  --ds-layer-menu: 60;
+  --ds-layer-overlay: 100;
+  --ds-layer-toast: 160;
+  --ds-layer-tooltip: 180;
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  /* Liquid Glass — water control material and channel palette. */
-  --lg-canvas: color-mix(in oklab,#fbfbfd 94%,transparent);
-  --lg-canvas-solid: #fbfbfd;
-  --lg-tint-thin: color-mix(in oklab,#ffffff 45%,transparent);
-  --lg-tint-regular: color-mix(in oklab,#ffffff 60%,transparent);
-  --lg-tint-thick: color-mix(in oklab,#ffffff 80%,transparent);
-  --lg-blur-thin: 12px;
-  --lg-blur-regular: 24px;
-  --lg-blur-thick: 34px;
-  --lg-saturate: 1.8;
-  --lg-edge-top: rgba(255,255,255,.9);
-  --lg-edge-bottom: rgba(255,255,255,.35);
-  --lg-stroke: rgba(15,25,45,.07);
-  --lg-stroke-strong: rgba(15,25,45,.14);
-  --lg-specular: rgba(255,255,255,.6);
-  --lg-shadow-thin: 0 1px 2px rgba(20,30,60,.08);
-  --lg-shadow-regular: 0 8px 24px rgba(20,30,60,.10), 0 1px 2px rgba(20,30,60,.08);
-  --lg-shadow-thick: 0 18px 48px rgba(20,30,60,.14), 0 2px 6px rgba(20,30,60,.08);
-  --lg-scrim: rgba(20,30,50,.14);
-  --liq-hot: #ffffff;
-  --liq-core: #9fe3ff;
-  --liq-mid: #4db6f5;
-  --liq-deep: #1f6fe0;
-  --liq-glow: rgba(90,180,255,.30);
-  --liq-sheen: rgba(255,255,255,.85);
-  --liq-crystal: #cfefff;
-  --liq-cooled: #b9c7d4;
-  --liq-pool-alpha: .45;
-  --liq-flow-speed: 70;
-  --liq-wave-period: 1.4s;
-  --lg-radius-control: 12px;
-  --lg-radius-pane: 18px;
-  --lg-radius-sheet: 22px;
-  --lg-radius-capsule: 999px;
-  --lg-spring: cubic-bezier(.2,.9,.25,1.12);
-  --lg-ease-out: cubic-bezier(.2,.8,.2,1);
-
   /* Codex electron-light */
   --ds-bg-primary: #ffffff;
   --ds-settings-rail-bg: #f3f3f3;
@@ -355,11 +330,8 @@
   --ds-error: #e02e2a;
   --ds-info: #5d5d5d;
   --ds-purple: #7c3aed;
-  --ds-shadow-dialog: 0 16px 48px rgba(0, 0, 0, 0.12);
-  --ds-shadow-model-menu:
-    0 0 0 0.5px color-mix(in oklab, #1a1c1f 10%, transparent),
-    0 8px 32px rgba(0, 0, 0, 0.1),
-    0 2px 8px rgba(0, 0, 0, 0.06);
+  --ds-shadow-dialog: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --ds-shadow-model-menu: var(--ds-shadow-dialog);
   --ds-elevation-stroke: 0 0 0 0.5px color-mix(in oklab, #1a1c1f 12%, transparent);
   /* Codex elevation-prominent exact (same dark/light formula). */
   --ds-shadow-composer: 0 3px 7.5px #0000000a, 0 0 20px #0000000d;
@@ -422,43 +394,32 @@
   --font-mono: ui-monospace, "SFMono-Regular", "SF Mono", Menlo, Consolas, "Liberation Mono",
     monospace;
 
-  /* Type ramp (Codex metrics; "-plus" = half-step between named sizes) */
-  --text-3xs: calc(10.5px * var(--font-scale));
-  --text-2xs: calc(11px * var(--font-scale)); /* alias kept: --text-xs */
-  --text-xs: calc(11px * var(--font-scale));
-  --text-xs-plus: calc(11.5px * var(--font-scale));
-  --text-sm: calc(12px * var(--font-scale));
-  --text-sm-plus: calc(12.5px * var(--font-scale));
-  --text-md: calc(13px * var(--font-scale));
-  --text-md-plus: calc(13.5px * var(--font-scale));
-  --text-base: calc(14px * var(--font-scale));
-  --text-base-plus: calc(15px * var(--font-scale));
-  --text-lg: calc(16px * var(--font-scale));
-  --text-lg-plus: calc(18px * var(--font-scale));
-  --text-xl: calc(20px * var(--font-scale));
-  --text-2xl: calc(28px * var(--font-scale));
+  /* One scalable role ladder: chrome stays quiet, reading text stays generous. */
+  --text-caption: calc(11px * var(--font-scale));
+  --text-meta: calc(12px * var(--font-scale));
+  --text-secondary: calc(13px * var(--font-scale));
+  --text-ui: calc(14px * var(--font-scale));
+  --text-reading: calc(15px * var(--font-scale));
+  --text-h3: calc(17px * var(--font-scale));
+  --text-h2: calc(20px * var(--font-scale));
+  --text-h1: calc(24px * var(--font-scale));
+  --text-display: calc(28px * var(--font-scale));
+  --text-code: var(--text-secondary);
+  --icon-caption: calc(12px * var(--font-scale));
+  --icon-meta: calc(14px * var(--font-scale));
+  --icon-ui: calc(16px * var(--font-scale));
+  --icon-heading: calc(20px * var(--font-scale));
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
-  --font-weight-medium-plus: 520;
-  --font-weight-strong: 560;
   --font-weight-semibold: 600;
 
-  --leading-none: 1;
-  --leading-heading: 1.15;
-  --leading-tighter: 1.2;
-  --leading-tight: 1.25;
-  --leading-compact: 1.3;
-  --leading-compact-plus: 1.35;
-  --leading-normal: 1.4;
-  --leading-body: 1.45;
-  --leading-relaxed: 1.5;
-  --leading-chat: 1.55;
-  --leading-prose: 1.6;
-  --leading-row: calc(18px * var(--font-scale)); /* sidebar thread titles */
-
-  --tracking-tighter: -0.03em;
-  --tracking-tight: -0.02em;
-  --tracking-normal: 0em;
-  --tracking-wide: 0.02em;
+  --leading-title: 1.2;
+  --leading-ui: 1.45;
+  --leading-reading: 1.6;
+  --leading-code: 1.6;
+  /* Superscripts and image-only literal wrappers must not add a text line. */
+  --leading-zero: 0;
+  --tracking-title: -0.02em;
+  --tracking-normal: 0;
 }

@@ -1,19 +1,3 @@
-/**
- * A menu select for a Settings row.
- *
- * Settings cards clip their overflow (`.settings-panel` draws the frame with
- * `overflow: hidden`), so the option list opens through `AnchoredMenu`. A
- * native `<select>` draws its popup at the OS level instead: it ignores the
- * menu surface tokens, shows the platform highlight, and has no current-value
- * marker. The closed trigger sizes to the current label (capped by its parent)
- * so a short value does not stretch the settings control column. Rows whose
- * list is short still use this control so one Settings window does not mix two
- * popup implementations.
- *
- * Unlike the Appearance pickers this list is not searchable — the longest
- * catalog here is the host command-shell list — so the menu opens on the
- * current option and keyboard users move with arrows alone.
- */
 import {
   useRef,
   useState,
@@ -23,10 +7,12 @@ import {
 import { cx } from "./ui";
 import { IconCheck, IconChevronDown } from "./icons";
 import { AnchoredMenu } from "./AnchoredMenu";
+import { useTranslation } from 'react-i18next';
 
 export type MenuSelectOption = {
   id: string;
   label: string;
+  group?: string;
   /** Listed but not selectable; the host may report an unavailable shell. */
   disabled?: boolean;
 };
@@ -42,6 +28,7 @@ export function SettingsMenuSelect({
   className,
   triggerClassName,
   leading,
+  searchable = false,
 }: {
   value: string;
   options: MenuSelectOption[];
@@ -58,15 +45,19 @@ export function SettingsMenuSelect({
   triggerClassName?: string;
   /** Optional icon or marker shown before the selected value. */
   leading?: ReactNode;
+  searchable?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
+  const [query, setQuery] = useState('');
   const [activeId, setActiveId] = useState(value);
   const optionRefs = useRef(new Map<string, HTMLButtonElement>());
 
   const current = options.find((option) => option.id === value);
-  const selectable = options.filter((option) => !option.disabled);
+  const visible = options.filter(option => `${option.label} ${option.id} ${option.group ?? ''}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()));
+  const selectable = visible.filter((option) => !option.disabled);
 
-  const close = () => setOpen(false);
+  const close = () => { setOpen(false); setQuery(''); };
 
   const choose = (option: MenuSelectOption) => {
     close();
@@ -92,6 +83,14 @@ export function SettingsMenuSelect({
   /* Arrow keys wrap over the selectable rows for parity with the Appearance
      pickers; Home/End and Enter stay with the focused option button. */
   const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Tab') { close(); return; }
+    if (event.target instanceof HTMLInputElement && event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault();
+      const target = event.key === 'Home' ? selectable[0] : selectable.at(-1);
+      if (target) { setActiveId(target.id); optionRefs.current.get(target.id)?.focus(); }
+      return;
+    }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
     moveActive(activeId, event.key === "ArrowDown" ? 1 : -1);
@@ -106,14 +105,17 @@ export function SettingsMenuSelect({
         label={label}
         align="end"
         onMenuKeyDown={onMenuKeyDown}
+        initialFocus={searchable ? 'input' : 'selected'}
+        role={searchable ? 'dialog' : 'listbox'}
         trigger={(ref) => (
           <button
             ref={ref}
             type="button"
-            className={cx("settings-menu-select-trigger lg-thin lg-control lg-pressable", triggerClassName)}
-            aria-haspopup="listbox"
+            className={cx("settings-menu-select-trigger", triggerClassName)}
+            aria-haspopup={searchable ? 'dialog' : 'listbox'}
             aria-expanded={open}
-            aria-label={label}
+            aria-label={`${label}: ${current?.label ?? value}`}
+            aria-busy={busy || undefined}
             disabled={disabled || busy}
             onClick={() => {
               setActiveId(value);
@@ -128,16 +130,19 @@ export function SettingsMenuSelect({
             <span className="settings-menu-select-trigger-label">
               {current?.label ?? value}
             </span>
-            <IconChevronDown size={14} aria-hidden />
+            <IconChevronDown size="var(--icon-meta)" aria-hidden />
           </button>
         )}
       >
+        {searchable && <input className="settings-search" aria-label={label} placeholder={t('settings.catalogSearch')} value={query} onChange={event => setQuery(event.target.value)} />}
         <div className="settings-menu-select-results">
-          <ul className="settings-menu-select-list">
-            {options.map((option) => {
+          {!visible.length && <p className="settings-empty" role="status">{t('settings.noResults')}</p>}
+          <ul className="settings-menu-select-list" role={searchable ? 'listbox' : undefined} aria-label={searchable ? label : undefined}>
+            {visible.map((option, index) => {
               const isCurrent = option.id === value;
               return (
                 <li key={option.id}>
+                  {option.group && option.group !== visible[index - 1]?.group && <div className="settings-option-group">{option.group}</div>}
                   <button
                     ref={(node) => {
                       if (node) optionRefs.current.set(option.id, node);
@@ -162,7 +167,7 @@ export function SettingsMenuSelect({
                     </span>
                     {isCurrent ? (
                       <IconCheck
-                        size={14}
+                        size="var(--icon-meta)"
                         className="settings-menu-select-check"
                         aria-hidden
                       />

@@ -1,5 +1,6 @@
-import { createPortal } from "react-dom";
 import {
+  createContext,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -11,35 +12,58 @@ import {
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
-import {
-  portalToBody,
-  useGlassExit,
-  visiblePortalContent,
-} from "../lib/portal-visibility";
+import { portalToBody, portalModal, canRestoreFocus } from "../lib/portal-visibility";
+export { useModalFocus } from "../lib/portal-visibility";
 
 import { IconEye, IconEyeOff, IconHelp } from "./icons";
+import { animateTo, motion, useReducedMotion } from './motion';
 
 export function cx(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(" ");
 }
 
-const OVERLAY_ROOT_ID = "omp-desktop-overlays";
+/** Viewport-fixed modal host with inherited visibility and nested portal ownership. */
+export const portalOverlay = portalModal;
 
-function overlayRoot(): HTMLElement {
-  const existing = document.getElementById(OVERLAY_ROOT_ID);
-  if (existing instanceof HTMLElement) return existing;
-  const root = document.createElement("div");
-  root.id = OVERLAY_ROOT_ID;
-  document.documentElement.appendChild(root);
-  return root;
+const OverlayLeaving = createContext(false);
+
+/** Retains conditional modal children through their exit; focus releases on removal. */
+export function OverlayPresence({ children }: { children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [retained, setRetained] = useState(children);
+  const present = children !== null && children !== undefined && children !== false;
+  const wasPresent = useRef(false);
+  const opener = useRef<HTMLElement | null>(null);
+  if (present && !wasPresent.current) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  wasPresent.current = present;
+  useLayoutEffect(() => {
+    if (present) { setRetained(children); return; }
+    const timer = window.setTimeout(() => setRetained(null), reduced ? motion.reduced : motion.exit);
+    return () => window.clearTimeout(timer);
+  }, [children, present, reduced]);
+  useLayoutEffect(() => {
+    // Capture before descendants mount: React autofocus can precede their focus trap.
+    if (!present && retained === null && opener.current) {
+      if (canRestoreFocus(opener.current)) opener.current.focus({ preventScroll: true });
+      opener.current = null;
+    }
+  }, [present, retained]);
+  return <OverlayLeaving.Provider value={!present}>{present ? children : retained}</OverlayLeaving.Provider>;
 }
 
-/** Mount a modal overlay on a viewport-fixed host so a transformed ancestor cannot trap `position: fixed`. */
-export function portalOverlay(node: ReactNode) {
-  return typeof document === "undefined"
-    ? node
-    : createPortal(visiblePortalContent(node), overlayRoot());
+/** Keeps a floating surface mounted until its shorter exit has completed. */
+export function useSurfacePresence(open: boolean) {
+  const reduced = useReducedMotion();
+  const [retained, setRetained] = useState(open);
+  useLayoutEffect(() => {
+    if (open) { setRetained(true); return; }
+    const timer = window.setTimeout(() => setRetained(false), reduced ? motion.reduced : motion.exit);
+    return () => window.clearTimeout(timer);
+  }, [open, reduced]);
+  return { present: open || retained, leaving: !open && retained };
 }
+
+export function useOverlayLeaving() { return useContext(OverlayLeaving); }
 
 function setRef<T>(ref: Ref<T> | undefined, value: T | null) {
   if (typeof ref === "function") ref(value);
@@ -143,6 +167,7 @@ function useTooltip<T extends HTMLElement>(
   const [dismissed, setDismissed] = useState(false);
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState<TooltipPosition | null>(null);
+  const presence = useSurfacePresence(visible);
   const active =
     Boolean(label) &&
     (hovered || focused) &&
@@ -284,7 +309,7 @@ function useTooltip<T extends HTMLElement>(
 
 
   useLayoutEffect(() => {
-    if (!visible) {
+    if (!presence.present) {
       setPosition(null);
       return;
     }
@@ -304,11 +329,12 @@ function useTooltip<T extends HTMLElement>(
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [visible]);
+  }, [visible, presence.present]);
 
   return {
     anchorRef,
-    open: visible,
+    open: presence.present,
+    leaving: presence.leaving,
     position,
     onPointerEnter: () => {
       setDismissed(false);
@@ -325,13 +351,14 @@ function PortalTooltip({
   label,
   position,
   className,
+  leaving,
 }: {
   label: string;
   position: TooltipPosition;
   className?: string;
+  leaving?: boolean;
 }) {
   const tooltipRef = useRef<HTMLSpanElement>(null);
-  useGlassExit(tooltipRef);
   const [layout, setLayout] = useState({ left: position.left, below: false });
 
   useLayoutEffect(() => {
@@ -344,15 +371,13 @@ function PortalTooltip({
     const maxLeft = window.innerWidth - halfWidth - 8;
     const left = Math.min(Math.max(position.left, minLeft), Math.max(minLeft, maxLeft));
     const below = position.top - rect.height < 8;
-    tooltip.style.setProperty("--lg-origin-x", `${position.left - left + halfWidth}px`);
-    tooltip.style.setProperty("--lg-origin-y", below ? "0px" : `${rect.height}px`);
     setLayout({ left, below });
   }, [className, label, position.left, position.top]);
 
   return portalToBody(
     <span
       ref={tooltipRef}
-      className={cx("ui-tooltip lg-thin lg-morph-in", className)}
+      className={cx("ui-tooltip", leaving && "is-leaving", className)}
       role="tooltip"
       style={{
         left: layout.left,
@@ -408,6 +433,7 @@ export function Tooltip({
           label={label}
           position={tooltip.position}
           className={tooltipClassName}
+          leaving={tooltip.leaving}
         />
       ) : null}
     </>
@@ -495,6 +521,7 @@ export function TooltipButton({
           label={label}
           position={tooltip.position}
           className={tooltipClassName}
+          leaving={tooltip.leaving}
         />
       ) : null}
     </>
@@ -523,7 +550,7 @@ export function HelpIcon({
       tooltipClassName="ui-tooltip-help"
       ariaLabel={label}
     >
-      <IconHelp size={13} />
+      <IconHelp size="var(--icon-meta)" />
     </TooltipButton>
   );
 }
@@ -548,7 +575,7 @@ export function Button({
         variant === "primary" && "btn-primary",
         variant === "secondary" && "btn-secondary",
         variant === "ghost" && "btn-ghost",
-        size === "sm" && "px-2.5 py-1 text-xs",
+        size === "sm" && "px-2.5 py-1 text-caption",
         className,
       )}
       {...props}
@@ -637,7 +664,7 @@ export function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <div className="text-sm text-text-secondary">
+      <div className="text-meta text-text-secondary">
         {label}
         {hint ? <HelpIcon label={hint} /> : null}
       </div>
@@ -674,7 +701,7 @@ export function SettingsToggle({
   return (
     <button
       type="button"
-      className={cx("settings-toggle lg-thin", checked && "on", busy && "is-busy", className)}
+      className={cx("settings-toggle", checked && "on", busy && "is-busy", className)}
       role="switch"
       aria-checked={checked}
       aria-label={label}
@@ -682,7 +709,7 @@ export function SettingsToggle({
       disabled={disabled || busy}
       onClick={onChange}
     >
-      <span className="settings-toggle-thumb" />
+      <span className="settings-toggle-track"><span className="settings-toggle-thumb" /></span>
     </button>
   );
 }
@@ -712,12 +739,33 @@ export function SegmentedControl<T extends string>({
   disabled?: boolean;
 }) {
   const itemRole = role === "tablist" ? "tab" : role === "radiogroup" ? "radio" : undefined;
+  const track = useRef<HTMLDivElement>(null), indicator = useRef<HTMLSpanElement>(null);
+  const reduced = useReducedMotion();
+  useLayoutEffect(() => {
+    const root = track.current, plate = indicator.current;
+    if (!root || !plate) return;
+    const update = () => {
+      const active = root.querySelector<HTMLElement>('.settings-segment-item.active');
+      if (!active) { plate.style.opacity = '0'; return; }
+      const before = plate.getBoundingClientRect(), rect = active.getBoundingClientRect();
+      const width = active.offsetWidth, height = active.offsetHeight, left = active.offsetLeft, top = active.offsetTop;
+      const changed = plate.dataset.ready === 'true' && plate.dataset.selection !== value;
+      plate.style.width = `${width}px`; plate.style.height = `${height}px`;
+      plate.style.left = `${left}px`; plate.style.top = `${top}px`; plate.style.opacity = '1'; plate.dataset.ready = 'true'; plate.dataset.selection = value;
+      if (changed && !reduced) animateTo(plate, [{ transform: `translate(${before.left - rect.left}px, ${before.top - rect.top}px) scaleX(${before.width / rect.width})` }, { transform: 'none' }], { duration: motion.expand, easing: motion.spring });
+    };
+    update();
+    const observer = new ResizeObserver(update); observer.observe(root);
+    return () => observer.disconnect();
+  }, [value, options, reduced]);
   return (
     <div
-      className={cx("settings-segment", className)}
+      ref={track}
+      className={cx("settings-segment motion-segment", className)}
       role={role}
       aria-label={label}
     >
+      <span ref={indicator} className="motion-segment-indicator" aria-hidden />
       {options.map((option) => (
         <button
           key={option.value}
@@ -734,6 +782,15 @@ export function SegmentedControl<T extends string>({
           )}
           disabled={disabled}
           onClick={() => onChange(option.value)}
+          tabIndex={itemRole ? value === option.value ? 0 : -1 : undefined}
+          onKeyDown={event => {
+            if (!itemRole || !['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const index = options.findIndex(item => item.value === value);
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? options.length - 1 : (index + (event.key === 'ArrowLeft' ? -1 : 1) + options.length) % options.length;
+            onChange(options[next].value);
+            track.current?.querySelectorAll<HTMLButtonElement>('button')[next]?.focus();
+          }}
         >
           {option.label}
         </button>

@@ -19,11 +19,11 @@ body,
     growing, or a denied grow when maximized) puts a scrollbar on the page.
   */
   overflow: hidden;
-  background: transparent;
+  background: var(--ds-bg-primary);
   color: var(--ds-text-primary);
   font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: var(--leading-body);
+  font-size: var(--text-ui);
+  line-height: var(--leading-ui);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   /*
@@ -35,28 +35,31 @@ body,
   user-select: none;
 }
 
-body {
-  background: radial-gradient(1200px 800px at 8% 110%, rgba(255,110,40,.10), transparent 60%), radial-gradient(900px 700px at 100% -10%, rgba(80,120,255,.07), transparent 60%), #0e0e10;
-}
-
-:root[data-theme="light"] body {
-  background: radial-gradient(1100px 800px at 0% 0%, rgba(120,200,255,.20), transparent 60%), radial-gradient(900px 700px at 100% 100%, rgba(190,160,255,.14), transparent 60%), #f4f6f9;
-}
-
-:root[data-platform="darwin"] body {
-  background: radial-gradient(1200px 800px at 8% 110%, rgba(255,110,40,.05), transparent 60%), radial-gradient(900px 700px at 100% -10%, rgba(80,120,255,.035), transparent 60%), transparent;
-}
-
-:root[data-platform="darwin"][data-theme="light"] body {
-  background: radial-gradient(1100px 800px at 0% 0%, rgba(120,200,255,.10), transparent 60%), radial-gradient(900px 700px at 100% 100%, rgba(190,160,255,.07), transparent 60%), transparent;
-}
-
 button,
 input,
 textarea,
 select {
   font: inherit;
   color: inherit;
+}
+
+/* Text wells are painted by CSS, not the platform textfield theme. Keep
+   number spinners and every non-text control's native appearance intact. */
+input:not([type]),
+input[type="text"],
+input[type="search"],
+input[type="password"],
+input[type="email"],
+input[type="url"],
+input[type="tel"],
+textarea {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+b,
+strong {
+  font-weight: var(--font-weight-semibold);
 }
 
 /*
@@ -123,7 +126,7 @@ textarea:disabled {
 }
 
 :focus-visible {
-  outline: 1.5px solid color-mix(in oklab, var(--ds-accent) 80%, transparent);
+  outline: 2px solid var(--ds-focus);
   outline-offset: 2px;
 }
 
@@ -182,7 +185,7 @@ html {
   display: flex;
   height: 100%;
   min-height: 0;
-  background: transparent;
+  background: var(--ds-bg-primary);
   color: var(--ds-text-primary);
 }
 
@@ -196,13 +199,6 @@ html {
   display: none;
 }
 
-.app-scenic-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  display: block;
-  pointer-events: none;
-}
 
 .app-shell-boot {
   align-items: center;

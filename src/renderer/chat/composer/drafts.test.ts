@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ComposerDraft, getComposerDraft, type Draft } from './drafts';
+import { ComposerDraft, forgetComposerDraft, getComposerDraft, type Draft } from './drafts';
 
 const draft: Draft = { text: 'Please inspect this file', references: [{ id: 'ref', sessionId: 'logical', path: 'file.txt', name: 'file.txt', kind: 'file', token: '\ue001' }], attachments: [{ id: 'attachment', name: 'image.png', path: '/selected/image.png', source: 'disk', expiresAt: 2000000000000, size: 10, kind: 'image' }] };
 test('a logical composer restores text, references, attachments and error after runtime adoption and remount', async () => {
@@ -15,7 +15,8 @@ test('a logical composer restores text, references, attachments and error after 
   assert.deepEqual(adoptedView.draft, draft);
   rejectSend(new Error('Native prompt rejected'));
   await operation;
-  assert.deepEqual(adoptedView.getSnapshot(), { draft, busy: false, error: 'Error: Native prompt rejected' });
+  assert.deepEqual(adoptedView.draft, draft);
+  assert.equal(adoptedView.getSnapshot().busy, false);
   assert.deepEqual(getComposerDraft(logicalKey).draft.attachments, draft.attachments);
 });
 test('failure does not erase a newer draft typed while the original send is pending', async () => {
@@ -28,7 +29,8 @@ test('failure does not erase a newer draft typed while the original send is pend
   store.setDraft(newer);
   rejectSend(new Error('Rejected'));
   await operation;
-  assert.deepEqual(store.getSnapshot(), { draft: newer, busy: false, error: 'Error: Rejected' });
+  assert.deepEqual(store.draft, newer);
+  assert.equal(store.getSnapshot().busy, false);
 });
 test('successful submission clears only the submitted draft and another logical session stays isolated', async () => {
   const first = new ComposerDraft(), second = new ComposerDraft();
@@ -51,7 +53,7 @@ test('accepted attachments leave a newer draft without consuming its new attachm
   const added = { ...draft.attachments[0], id: 'new-attachment' };
   store.setDraft({ ...store.draft, text: 'Edited while waiting', attachments: [...store.draft.attachments, added] });
   finish(); await operation;
-  assert.deepEqual(store.draft, { text: 'Edited while waiting', references: draft.references, attachments: [added] });
+  assert.deepEqual(store.draft, { text: 'Edited while waiting', references: [], attachments: [added] });
 });
 test('fork handoff moves the latest composition without leaving attachment aliases in the original', () => {
   const source = new ComposerDraft(), fork = new ComposerDraft();
@@ -67,4 +69,55 @@ test('fork handoff moves the latest composition without leaving attachment alias
   fork.applyEditor('later-editor-command', 'New explicit editor text');
   assert.equal(fork.draft.text, 'New explicit editor text');
   assert.deepEqual(fork.draft.attachments, newer.attachments);
+});
+test('forgetting a removed conversation draft preserves another composition and fences its late send', async () => {
+  const removed = getComposerDraft('removed-conversation');
+  const other = getComposerDraft('retained-conversation');
+  removed.setDraft(draft); other.setDraft({ ...draft, text: 'Keep this composition' });
+  const { promise, resolve } = Promise.withResolvers<void>();
+  const sending = removed.submit(() => promise);
+  forgetComposerDraft('removed-conversation');
+  resolve(); await sending;
+  assert.deepEqual(getComposerDraft('removed-conversation').draft, { text: '', references: [], attachments: [] });
+  assert.deepEqual(other.draft, { ...draft, text: 'Keep this composition' });
+  forgetComposerDraft('removed-conversation'); forgetComposerDraft('retained-conversation');
+});
+test('connect then send retains the draft through both admissions and blocks duplicate submission', async () => {
+  const store = new ComposerDraft();
+  store.setDraft(draft);
+  const connected = Promise.withResolvers<void>(), accepted = Promise.withResolvers<void>();
+  let connections = 0, sends = 0;
+  const operation = store.submit(async submitted => {
+    connections++; await connected.promise;
+    sends++; assert.deepEqual(submitted, draft); await accepted.promise;
+  });
+  assert.deepEqual(store.draft, draft);
+  assert.equal(store.getSnapshot().busy, true);
+  assert.deepEqual(store.getSnapshot().pending,draft);
+  await store.submit(async () => { connections++; sends++; });
+  assert.equal(connections, 1); assert.equal(sends, 0);
+  connected.resolve(); await Promise.resolve();
+  assert.equal(sends, 1); assert.deepEqual(store.draft, draft);
+  accepted.resolve(); await operation;
+  assert.deepEqual(store.draft, { text: '', references: [], attachments: [] });
+  assert.equal(store.getSnapshot().busy, false);
+  assert.equal(store.getSnapshot().pending,undefined);
+});
+
+test('failed warm startup restores the pending draft and permits a deliberate retry', async () => {
+  const store=new ComposerDraft();
+  store.setDraft(draft);
+  const startup=Promise.withResolvers<void>();
+  let prompts=0;
+  const submitting=store.submit(async()=>{await startup.promise;prompts++;});
+  assert.deepEqual(store.getSnapshot().pending,draft);
+  startup.reject(new Error('Native startup failed'));
+  await submitting;
+  assert.equal(prompts,0);
+  assert.equal(store.getSnapshot().busy,false);
+  assert.equal(store.getSnapshot().pending,undefined);
+  assert.deepEqual(store.draft,draft);
+  await store.submit(async()=>{prompts++;});
+  assert.equal(prompts,1);
+  assert.equal(store.draft.text,'');
 });

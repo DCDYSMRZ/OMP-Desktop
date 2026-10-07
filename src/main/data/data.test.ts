@@ -96,22 +96,42 @@ test('directory-only dotenv precedence and explicit empty canonical profile matc
   } finally { await rm(home, { recursive: true, force: true }); }
 });
 
-test('desktop theme preferences accept only native theme sources', () => {
-  for (const theme of ['dark', 'light', 'system']) {
-    assert.equal(validatePreferences({ theme }).theme, theme);
-  }
-  for (const theme of ['auto', 'Dark', '', ' dark ', null, undefined, true, 0, {}, ['dark']]) {
-    assert.throws(() => validatePreferences({ theme }), /Invalid desktop preference: theme/);
-  }
+test('stored retired appearance keys are discarded without losing unrelated preferences', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'omp-desktop-legacy-prefs-'));
+  try {
+    const path = join(directory, 'desktop-preferences.json');
+    const retained = { language: 'en', fontSize: 18, fontFamily: 'monospace', sidebarWidth: 300, panelWidth: 620, chatContentWidth: 920, executablePath: '/offline/omp', profile: 'work', lastWorkspace: '/offline/work', recentWorkspaces: ['/offline/work'], pinnedSessions: ['/offline/session'], enterToSend: false };
+    for (const appearance of [{ theme: 'light', motionMode: 'off' }, { theme: 'system', motionMode: 'system' }, { theme: 'dark' }, { motionMode: 'off' }, { theme: { obsolete: true }, motionMode: 'on' }]) {
+      const original = JSON.stringify({ ...retained, ...appearance });
+      await writeFile(path, original);
+      const store = new PreferenceStore(directory);
+      const loaded = await store.get();
+      assert.deepEqual(Object.fromEntries(Object.keys(retained).map(key => [key, loaded[key as keyof typeof loaded]])), retained);
+      assert.equal('theme' in loaded, false); assert.equal('motionMode' in loaded, false);
+      assert.equal(await readFile(path, 'utf8'), original);
+      await Promise.all([store.set({ fontSize: 20 }), store.set({ language: 'zh-CN' })]);
+      const expected = { ...loaded, fontSize: 20, language: 'zh-CN' };
+      assert.deepEqual(await new PreferenceStore(directory).get(), expected);
+      assert.deepEqual(JSON.parse(await readFile(path, 'utf8')), expected);
+    }
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
 test('desktop preference saves merge concurrent patches and reject corrupt or out-of-bound input without replacement', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'omp-desktop-prefs-'));
   try {
     const store = new PreferenceStore(directory);
-    await Promise.all([store.set({ theme: 'dark' }), store.set({ language: 'en' })]);
-    assert.equal((await store.get()).theme, 'dark');
+    await Promise.all([store.set({ fontSize: 18 }), store.set({ language: 'en' })]);
+    assert.equal((await store.get()).fontSize, 18);
     assert.equal((await store.get()).language, 'en');
+    const path = join(directory, 'desktop-preferences.json');
+    const saved = await readFile(path, 'utf8');
+    for (const patch of [{ theme: 'dark' }, { motionMode: 'off' }, { theme: null }, { motionMode: undefined }, { language: 'zh-CN', unknown: true }]) {
+      assert.throws(() => validatePreferences(patch));
+      await assert.rejects(async () => store.set(patch as Parameters<PreferenceStore['set']>[0]));
+      assert.equal(await readFile(path, 'utf8'), saved);
+    }
+    assert.equal((await new PreferenceStore(directory).get()).language, 'en');
     await store.set({ panelWidth: 1 });
     assert.equal((await store.get()).panelWidth, 1);
     await store.set({ panelWidth: 244 });
@@ -132,10 +152,19 @@ test('desktop preference saves merge concurrent patches and reject corrupt or ou
     assert.throws(() => validatePreferences({ fontSize: Number.NaN }), /Invalid/);
     assert.throws(() => validatePreferences({ recentWorkspaces: Array.from({ length: 41 }, (_, index) => `/workspace/${index}`) }), /Invalid/);
     assert.throws(() => validatePreferences({ apiKey: 'not-a-desktop-preference' }), /Unknown/);
-    const path = join(directory, 'desktop-preferences.json');
     await writeFile(path, '{invalid');
-    await assert.rejects(store.set({ theme: 'light' }), /Invalid desktop preferences JSON/);
+    await assert.rejects(new PreferenceStore(directory).get());
+    await assert.rejects(store.set({ language: 'zh-CN' }));
     assert.equal(await readFile(path, 'utf8'), '{invalid');
+    for (const invalid of [{ theme: 'light', motionMode: 'off', unknown: true }, { theme: 'dark', fontSize: 0 }, null, []]) {
+      const serialized = JSON.stringify(invalid);
+      await writeFile(path, serialized);
+      await assert.rejects(new PreferenceStore(directory).get());
+      await assert.rejects(store.set({ language: 'zh-CN' }));
+      assert.equal(await readFile(path, 'utf8'), serialized);
+    }
+    await writeFile(path, saved);
+    assert.equal((await store.set({ language: 'zh-CN' })).language, 'zh-CN');
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
@@ -217,4 +246,22 @@ test('negative numeric settings remain positional CLI arguments and preserve the
   assert.equal(negative.startsWith('-'), false);
   assert.equal(Number(negative.trim()), -1);
   assert.equal(Object.is(Number(serializeSetting(entry, -0).trim()), -0), true);
+});
+
+test('sidebar preferences are bounded, canonical and migrate only an existing browser store', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'omp-sidebar-preferences-'));
+  try {
+    const workspace = join(directory, 'workspace'), alias = join(directory, 'alias');
+    await mkdir(workspace); await symlink(workspace, alias);
+    const store = new PreferenceStore(directory);
+    assert.equal((await store.get()).sidebarStateMigrated, true);
+    await mkdir(join(directory, 'Local Storage', 'leveldb'), { recursive: true });
+    await writeFile(join(directory, 'Local Storage', 'leveldb', 'CURRENT'), 'legacy');
+    assert.equal((await store.get()).sidebarStateMigrated, false);
+    const saved = await store.set({ hiddenProjects: [alias, workspace], collapsedProjects: { [alias]: true }, sidebarStateMigrated: true });
+    assert.deepEqual(saved.hiddenProjects, [await realpath(workspace)]);
+    assert.deepEqual(saved.collapsedProjects, { [await realpath(workspace)]: true });
+    assert.deepEqual(await new PreferenceStore(directory).get(), saved);
+    for (const patch of [{ hiddenProjects: ['relative'] }, { hiddenProjects: Array.from({ length: 201 }, (_, i) => '/p' + i) }, { collapsedProjects: { '/path': 'yes' } }, { collapsedProjects: { relative: true } }, { collapsedProjects: Object.fromEntries(Array.from({ length: 201 }, (_, i) => ['/p' + i, true])) }, { sidebarStateMigrated: 'yes' }]) assert.throws(() => validatePreferences(patch), /Invalid/);
+  } finally { await rm(directory, { recursive: true, force: true }); }
 });

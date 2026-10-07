@@ -18,6 +18,7 @@
  */
 import {
   Fragment,
+  useContext,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -27,13 +28,15 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { portalToBody, useGlassExit } from "../lib/portal-visibility";
+import { PortalVisibilityContext, portalToBody, canRestoreFocus } from "../lib/portal-visibility";
 import {
   placeContextMenu,
   type ContextMenuPlacement,
   type ContextMenuPoint,
 } from "../lib/context-menu";
 import { texClipboardPayload } from "../lib/selection-tex";
+import { useSurfacePresence } from './ui';
+import { useSurfaceMotion } from './motion';
 
 export type ContextMenuItem = {
   /** Stable identity for React keys and for tests naming a row. */
@@ -179,15 +182,22 @@ export function useContextMenu() {
 }
 
 export function ContextMenu({
-  state,
+  state: requestedState,
   onClose,
 }: {
   state: ContextMenuState | null;
   onClose: () => void;
 }) {
+  const visible = useContext(PortalVisibilityContext);
+  const open = visible && !!requestedState;
+  const { present, leaving } = useSurfacePresence(open);
+  const lastState = useRef(requestedState);
+  if (requestedState) lastState.current = requestedState;
+  const state = visible && present ? requestedState ?? lastState.current : null;
   const menuRef = useRef<HTMLDivElement>(null);
-  useGlassExit(menuRef, !!state);
   const [placement, setPlacement] = useState<ContextMenuPlacement | null>(null);
+  useSurfaceMotion(menuRef, open, 'scale', !!placement);
+  useEffect(() => { if (!visible && requestedState) onClose(); }, [visible, requestedState, onClose]);
 
   const measure = useCallback(
     (request: ContextMenuState) => {
@@ -200,8 +210,6 @@ export function ContextMenu({
         { width: rect.width, height: rect.height },
         { width: window.innerWidth, height: window.innerHeight },
       );
-      menu.style.setProperty("--lg-origin-x", `${request.point.x - next.left}px`);
-      menu.style.setProperty("--lg-origin-y", `${request.point.y - next.top}px`);
       setPlacement((previous) =>
         previous && previous.top === next.top && previous.left === next.left
           ? previous
@@ -248,27 +256,28 @@ export function ContextMenu({
         ? document.activeElement
         : null;
     return () => {
-      if (interrupted?.isConnected) interrupted.focus();
+      if (canRestoreFocus(interrupted)) interrupted.focus();
     };
   }, [state]);
 
   useEffect(() => {
-    if (!state) return;
+    if (!state || leaving) return;
     const menu = menuRef.current;
     /*
       Capture phase on purpose: a nested surface that stops propagation on its
       own press would otherwise leave this menu open behind it.
     */
     const onOutside = (event: Event) => {
+      if (!canRestoreFocus(menu)) return;
       const target = event.target as Node | null;
       if (target && menu?.contains(target)) return;
       onClose();
     };
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (event.key !== "Escape" || !canRestoreFocus(menu)) return;
       // Stop so a surrounding overlay does not also close on this Escape.
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
       onClose();
     };
     window.addEventListener("pointerdown", onOutside, true);
@@ -285,13 +294,14 @@ export function ContextMenu({
       window.removeEventListener("blur", onClose);
       window.removeEventListener("keydown", onKeyDown, true);
     };
-  }, [onClose, state]);
+  }, [onClose, state, leaving]);
 
   // Keyboard users land on the first item; Enter then runs it instead of
   // re-opening the menu.
   useEffect(() => {
-    if (!state || !placement) return;
+    if (!state || !placement || leaving) return;
     const frame = requestAnimationFrame(() => {
+      if (!canRestoreFocus(menuRef.current)) return;
       menuRef.current
         ?.querySelector<HTMLButtonElement>(
           '[role="menuitem"]:not(:disabled)',
@@ -299,7 +309,7 @@ export function ContextMenu({
         ?.focus();
     });
     return () => cancelAnimationFrame(frame);
-  }, [placement, state]);
+  }, [placement, state, leaving]);
 
   const onMenuKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     // Tab leaves the menu rather than walking its items.
@@ -331,7 +341,8 @@ export function ContextMenu({
   return portalToBody(
     <div
       ref={menuRef}
-      className={`context-menu lg-regular lg-menu${placement ? " is-open lg-morph-in" : ""}`}
+      className={`context-menu ui-floating-presence motion-managed${placement ? " is-open" : ""}${leaving ? " is-leaving" : ""}`}
+      inert={leaving}
       role="menu"
       aria-label={state.label}
       onKeyDown={onMenuKeyDown}
@@ -341,7 +352,7 @@ export function ContextMenu({
       }}
       style={
         placement
-          ? { top: `${placement.top}px`, left: `${placement.left}px` }
+          ? { top: `${placement.top}px`, left: `${placement.left}px`, transformOrigin: `${state.point.x - placement.left}px ${state.point.y - placement.top}px` }
           : undefined
       }
     >

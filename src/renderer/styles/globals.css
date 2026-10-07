@@ -11,7 +11,7 @@
 */
 @import "./tokens.css";
 @import "./base.css";
-@import "./liquid-glass.css";
+@import "./motion.css";
 @import "./chrome.css";
 @import "./chat-shell.css";
 @import "./composer.css";
@@ -31,4 +31,5 @@
 @import "./providers.css";
 @import "./chat-links.css";
 @import "./composer-autocomplete.css";
+@import "../app/shell.css";
 @import "./responsive.css";

@@ -1,42 +1,85 @@
-/* Native omp controls extend the retained PI-Desktop settings shell, cards and rows. */
-.native-settings-note { padding: 14px 16px; border: 0.5px solid var(--lg-stroke); border-radius: var(--lg-radius-control); background: var(--lg-canvas); color: var(--ds-text-secondary); font-size: var(--text-sm); line-height: 1.6; overflow-wrap: anywhere; }
+.native-settings-note { padding: 12px 16px; border-radius: 12px; background: var(--ds-tile); color: var(--tl-ink); font-size: var(--text-meta); line-height: var(--leading-reading); overflow-wrap: anywhere; }
 .native-settings-note p { margin: 0 0 10px; }
-.native-settings-note p:last-child { margin-bottom: 0; }
+.native-settings-note details { margin-bottom: 10px; }
+.native-settings-note summary { cursor: pointer; }
 .native-settings-note dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; margin: 12px 0; }
-.native-settings-note dt { color: var(--ds-text-muted); }
+.native-settings-note dt { color: var(--tl-ink-meta); }
 .native-settings-note dd { margin: 0; }
-.native-setting { border-bottom: 0.5px solid var(--lg-stroke); }
-.native-setting:last-child { border-bottom: 0; }
-.native-setting > .settings-row { border-bottom: 0; align-items: flex-start; }
-.native-setting .settings-row-copy { min-width: 0; flex: 1 1 42%; }
+.settings-shell .settings-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 1fr); align-items: start; gap: 24px; }
+.settings-shell .settings-row-control { width: 100%; max-width: none; min-width: 0; }
+.settings-shell .settings-row-description { margin: 4px 0 0; color: var(--tl-ink-meta); font-size: var(--text-meta); line-height: var(--leading-reading); }
+.settings-shell .settings-row-title { font-size: var(--text-secondary); }
+.settings-shell .settings-row-detail { overflow-wrap: anywhere; }
+.settings-shell .settings-row-detail code { display: block; font-size: var(--text-code); }
+.native-setting + .native-setting { margin-top: 8px; }
 .native-setting .settings-row-title { overflow-wrap: anywhere; }
-.native-setting .settings-row-detail { display: grid; gap: 5px; overflow-wrap: anywhere; }
-.native-setting .settings-row-detail code { white-space: pre-wrap; display: block; max-height: 140px; overflow: auto; font-size: var(--text-xs); }
-.native-setting-type { font-family: var(--font-mono); color: var(--ds-text-muted); font-size: var(--text-xs); }
-.native-setting .settings-row-control { flex: 1 1 54%; min-width: 0; width: auto; }
+.native-setting .settings-row-detail { display: grid; gap: 8px; }
 .native-setting-form { display: grid; gap: 8px; width: 100%; min-width: 0; }
 .native-setting-form .field-textarea { width: 100%; min-height: 104px; resize: vertical; font-family: var(--font-mono); }
 .native-setting-form .field-input, .native-setting-form .field-select { width: 100%; min-width: 0; }
-.native-setting-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 6px; }
-.native-desktop-field { display: flex; align-items: center; gap: 8px; max-width: 340px; width: 100%; }
+.native-setting-form .settings-menu-select-anchor.is-full { width: 100%; }
+.native-setting-form > .settings-toggle { justify-self: end; }
+.native-setting-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 8px; }
+.native-desktop-field { display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0; }
 .native-desktop-field .field-input { min-width: 0; flex: 1; }
-.native-setting-muted { color: var(--ds-text-muted); font-size: var(--text-xs); line-height: 1.5; }
-.native-setting-message { padding: 0 16px 12px; font-size: var(--text-sm); line-height: 1.5; overflow-wrap: anywhere; color: var(--ds-text-secondary); }
-.native-setting-error { color: var(--ds-danger, #c54a4a); white-space: pre-wrap; }
-.native-reset-confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px; border: 0.5px solid var(--lg-stroke); border-radius: var(--lg-radius-control); font-size: var(--text-xs); }
+.native-setting-muted { color: var(--tl-ink-meta); font-size: var(--text-meta); line-height: var(--leading-reading); }
+.native-setting-message { padding: 0 16px 12px; font-size: var(--text-meta); line-height: var(--leading-reading); overflow-wrap: anywhere; color: var(--tl-ink); }
+.native-setting-error { color: var(--ds-error); white-space: pre-wrap; }
+.native-reset-confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px; border-radius: var(--radius-md); background: var(--ds-tile); font-size: var(--text-meta); }
 .native-reset-confirm > span { width: 100%; }
 .native-setting-group { margin-top: 10px; }
-.native-group-toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border-radius: var(--radius-sm); padding: 12px 8px; text-align: left; color: var(--ds-text-primary); font-weight: 550; }
+.native-group-toggle { display: flex; justify-content: space-between; align-items: center; gap: 12px; width: 100%; border-radius: var(--radius-sm); padding: 12px 8px; text-align: left; color: var(--tl-ink-strong); font-weight: var(--font-weight-semibold); }
 .native-group-toggle:hover { background: var(--ds-bg-hover); }
-.native-group-toggle:focus-visible { outline: 2px solid color-mix(in oklab, var(--liq-mid) 55%, transparent); outline-offset: 2px; }
-.native-group-toggle > span:last-child { color: var(--ds-text-muted); font-size: var(--text-xs); }
-.native-settings-empty { padding: 16px; color: var(--ds-text-muted); }
-.native-model-list { margin-top: 10px; }
-.native-model-list summary { cursor: pointer; }
-.native-model-list ul { max-height: 220px; overflow: auto; padding-left: 20px; }
-.native-settings-legal { color: var(--ds-text-muted); font-size: var(--text-xs); line-height: 1.7; margin-top: 12px; }
-@media (max-width: 860px) {
-  .native-setting > .settings-row { flex-direction: column; gap: 12px; align-items: stretch; }
-  .native-setting .settings-row-control { width: 100%; }
+.native-group-toggle:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.native-group-toggle > span:last-child { color: var(--tl-ink-meta); font-size: var(--text-meta); }
+.native-settings-empty { padding: 16px; color: var(--tl-ink-meta); }
+.native-settings-legal { color: var(--tl-ink-meta); font-size: var(--text-meta); line-height: var(--leading-reading); margin-top: 12px; }
+.settings-key { display: flex; gap: 8px; color: var(--tl-ink-meta); text-align: left; overflow-wrap: anywhere; }
+.settings-key:hover { color: var(--tl-ink-strong); }
+.settings-provenance { padding: 4px 8px; border-radius: 6px; background: var(--tl-surface-hover); color: var(--tl-ink-meta); font-size: var(--text-meta); }
+.settings-modified { margin-left: 8px; color: var(--ds-accent); font-size: var(--text-meta); }
+.settings-shell .native-setting-roles > .settings-row { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+.settings-role-table { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; }
+.settings-role-row { display: grid; grid-template-columns: minmax(120px, .8fr) minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px 0; font-size: var(--text-secondary); color: var(--tl-ink); }
+.settings-role-copy { min-width: 0; }
+.settings-role-copy > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+.settings-role-copy code { font-size: var(--text-meta); color: var(--tl-ink-meta); }
+.settings-role-copy p { margin: 3px 0 0; color: var(--tl-ink-meta); font-size: var(--text-meta); line-height: var(--leading-reading); }
+.settings-option-group { padding: 10px 10px 4px; color: var(--tl-ink-meta); font-size: var(--text-meta); }
+.settings-filter { display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.settings-search-results { display: grid; gap: 8px; }
+.settings-search-result { display: grid; gap: 6px; text-align: left; padding: 16px; border-radius: var(--tl-radius-block); background: var(--tl-surface); color: var(--tl-ink); font-size: var(--text-secondary); }
+.settings-search-result:hover { background: var(--tl-surface-hover); }
+.settings-search-result strong { color: var(--tl-ink-strong); }
+.settings-result-breadcrumb, .settings-search-result code { font-size: var(--text-meta); color: var(--tl-ink-meta); }
+.settings-search-result mark { color: inherit; background: var(--tl-warning-soft); border-radius: 2px; }
+.settings-size-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.settings-size-presets [aria-pressed="true"] { background: var(--tl-surface-selected); color: var(--tl-ink-strong); }
+.settings-preview { padding: 20px; border-radius: var(--tl-radius-block); background: var(--tl-surface); }
+.settings-preview h3 { margin: 0; font-size: var(--text-secondary); }
+.settings-preview-transcript { line-height: var(--leading-reading); color: var(--tl-ink-strong); }
+.settings-preview-user { width: fit-content; margin: 16px 0 16px auto; padding: 8px 14px; border-radius: 16px; background: var(--tl-surface-strong); }
+.settings-preview-tool { padding: 4px 8px; background: var(--tl-surface-hover); border-radius: 8px; color: var(--tl-ink); font-size: calc(1em * var(--text-secondary) / var(--text-reading)); }
+.settings-preview-transcript > code { display: block; padding: 10px 12px; background: var(--tl-code-bg); border-radius: 8px; font-size: calc(1em * var(--text-code) / var(--text-reading)); }
+.settings-preview-transcript > small { display: block; margin-top: 12px; color: var(--tl-ink-meta); font-size: calc(1em * var(--text-meta) / var(--text-reading)); }
+.settings-credentials { width: 100%; border-collapse: collapse; text-align: left; font-size: var(--text-secondary); }
+.settings-credentials th, .settings-credentials td { padding: 12px 16px; overflow-wrap: anywhere; }
+.settings-credentials th { color: var(--tl-ink-meta); font-size: var(--text-meta); font-weight: var(--font-weight-medium); }
+.settings-credentials td { color: var(--tl-ink); }
+.settings-credentials code { font-size: var(--text-code); }
+.settings-shell [hidden] { display: none; }
+.settings-shell #setting-executablePath { grid-template-columns: minmax(0, 1fr); }
+@container settings-content (max-width: 719px) {
+  .settings-shell .settings-row { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .native-settings-note dl { grid-template-columns: 1fr; }
+  .settings-role-table { grid-template-columns: minmax(0, 1fr); }
 }
+.native-settings-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: var(--text-meta); color: var(--tl-ink-meta); }
+.native-settings-toolbar details { min-width: 0; }
+.native-settings-toolbar summary { cursor: pointer; }
+.settings-provider-group { margin-top: 24px; }
+.settings-provider-group h3 { margin: 0 0 8px; font-size: var(--text-secondary); color: var(--tl-ink-strong); }
+.settings-provider-group h3 span { margin-left: 8px; font-size: var(--text-meta); color: var(--tl-ink-meta); font-weight: normal; }
+.settings-provider-group code { display: block; margin-top: 4px; font-size: var(--text-caption); color: var(--tl-ink-meta); }
+.native-setting-error pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-meta); }
+.native-setting .settings-key code { font-size: var(--text-caption); }

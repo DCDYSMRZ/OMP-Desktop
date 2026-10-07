@@ -1,3 +1,10 @@
+import { safeDecodeUri } from "./chat-links";
+
+/** Agent JSON-path segments are decoded exactly once by the resource backend. */
+export function markdownSessionResourceReference(href: string): string {
+  return href.startsWith("agent://") ? href : safeDecodeUri(href);
+}
+
 type MarkdownNode = {
   type?: unknown;
   url?: unknown;

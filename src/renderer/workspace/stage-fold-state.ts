@@ -2,13 +2,14 @@ export interface StageFoldState { expanded: boolean; manual: boolean; wasActive:
 export type StageFoldEvent =
   | { type: 'mount'; active: boolean; defaultExpanded: boolean }
   | { type: 'active' }
+  | { type: 'attention' }
+  | { type: 'interact' }
   | { type: 'settle'; canFold: boolean }
-  | { type: 'absorb-done' | 'hover-out'; now: number; protected: boolean; returnsPending: boolean }
-  | { type: 'hover-in' | 'returns-pending' }
-  | { type: 'manual'; expanded: boolean }
-  | { type: 'deadline'; now: number; protected: boolean; returnsPending: boolean };
+  | { type: 'idle'; now: number; protected: boolean }
+  | { type: 'deadline'; now: number; protected: boolean }
+  | { type: 'manual'; expanded: boolean };
 
-/** The deadline is wall-clock time so an unavoidable remount resumes, not restarts, the wait. */
+/** Automatic folding only follows successful settlement; user choices always win. */
 export function nextStageFoldState(previous: StageFoldState | undefined, event: StageFoldEvent): StageFoldState {
   if (event.type === 'mount') {
     if (!previous) return { expanded: event.defaultExpanded, manual: false, wasActive: event.active };
@@ -19,14 +20,12 @@ export function nextStageFoldState(previous: StageFoldState | undefined, event: 
   if (event.type === 'manual') return { expanded: event.expanded, manual: true, wasActive: previous.wasActive };
   if (event.type === 'active') return { expanded: previous.manual ? previous.expanded : true, manual: previous.manual, wasActive: true };
   if (previous.manual) return previous;
+  if (event.type === 'attention') return previous.expanded && previous.foldDueAt === undefined ? previous : { expanded: true, manual: false, wasActive: previous.wasActive };
   if (event.type === 'settle') return previous.wasActive ? { expanded: true, manual: false, wasActive: event.canFold } : previous;
-  if (event.type === 'hover-in' || event.type === 'returns-pending') return previous.foldDueAt === undefined ? previous : { expanded: previous.expanded, manual: false, wasActive: previous.wasActive };
-  if (!previous.wasActive || !previous.expanded) return previous;
-  if (event.type === 'absorb-done' || event.type === 'hover-out' || event.type === 'deadline') {
-    if (event.protected || event.returnsPending) return previous;
-    if (event.type !== 'deadline') return previous.foldDueAt === undefined ? { ...previous, foldDueAt: event.now + 1400 } : previous;
-    if (previous.foldDueAt !== undefined && event.now >= previous.foldDueAt) return { expanded: false, manual: false, wasActive: false };
-  }
+  if (event.type === 'interact') return previous.foldDueAt === undefined ? previous : { expanded: previous.expanded, manual: false, wasActive: previous.wasActive };
+  if (!previous.wasActive || !previous.expanded || event.protected) return previous;
+  if (event.type === 'idle') return previous.foldDueAt === undefined ? { ...previous, foldDueAt: event.now + 1400 } : previous;
+  if (previous.foldDueAt !== undefined && event.now >= previous.foldDueAt) return { expanded: false, manual: false, wasActive: false };
   return previous;
 }
 

@@ -1,4 +1,5 @@
-import type { SessionAccess } from '../../shared/contracts';
+import { realpath, stat } from 'node:fs/promises';
+import type { RuntimeSourceState, SessionAccess } from '../../shared/contracts';
 
 /** Serialize admissions, not UI reply delivery (native commands may await those replies). */
 export class SessionAdmissions {
@@ -18,7 +19,20 @@ export class SessionAdmissions {
 }
 
 export function requireWritable(access: SessionAccess): void {
-  if (access.status !== 'idle' && access.status !== 'owned') {
+  if (access.pending || access.status !== 'idle' && access.status !== 'owned') {
     throw new Error(access.reason || (access.status === 'external' ? 'This session is owned by another native process' : 'Session ownership could not be verified'));
+  }
+}
+
+/** Window-lifetime capabilities, independent of whether a native child is connected. */
+export class SessionHistoryGrants extends Set<string> {
+  grantSource(source: RuntimeSourceState): void {
+    if (source.path && source.status !== 'unavailable') this.add(source.path);
+  }
+  async approve(requested: string): Promise<string> {
+    const path = await realpath(requested);
+    if (!this.has(path)) throw new Error('Choose a native session file or select it from history first');
+    if (!(await stat(path)).isFile()) throw new Error('Native session source is not a file');
+    return path;
   }
 }

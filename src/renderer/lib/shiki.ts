@@ -12,8 +12,8 @@ import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
  *
  * - JavaScript regex engine: no wasm asset, synchronous tokenization once
  *   languages are loaded.
- * - Languages load lazily on first sight of a fence tag; callers render a
- *   plain-text fallback until `subscribeHighlighter` notifies readiness.
+ * - Languages load lazily inside the highlighting worker. The renderer keeps
+ *   readable plain text visible until the tokens arrive.
  * - `tokenizeIncremental` keeps a per-line token cache chained through
  *   GrammarState so a streaming code block only re-tokenizes the lines that
  *   changed (normally just the tail line) — per-frame cost stays constant
@@ -141,29 +141,7 @@ for (const id of SUPPORTED_LANGUAGES) {
 
 let highlighter: HighlighterCore | null = null;
 let creating: Promise<HighlighterCore> | null = null;
-let version = 0;
-
 const readyLangs = new Set<string>();
-const pendingLangs = new Set<string>();
-const failedLangs = new Set<string>();
-const listeners = new Set<() => void>();
-
-function notify() {
-  version += 1;
-  for (const listener of listeners) listener();
-}
-
-export function subscribeHighlighter(listener: () => void): () => void {
-  listeners.add(listener);
-  return () => {
-    listeners.delete(listener);
-  };
-}
-
-/** Monotonic readiness counter — snapshot for useSyncExternalStore. */
-export function getHighlightVersion(): number {
-  return version;
-}
 
 const PLAIN_LANGS = new Set(["", "text", "txt", "plain", "plaintext", "ansi"]);
 
@@ -189,33 +167,12 @@ function getHighlighterInstance(): Promise<HighlighterCore> {
   return creating;
 }
 
-/** Kick off lazy loading for a language; safe to call every render. */
-export function ensureLang(lang: string): void {
+export async function loadHighlightLanguage(lang: string): Promise<void> {
   const resolved = resolveLang(lang);
-  if (
-    !resolved ||
-    readyLangs.has(resolved) ||
-    pendingLangs.has(resolved) ||
-    failedLangs.has(resolved)
-  ) {
-    return;
-  }
-  pendingLangs.add(resolved);
-  void getHighlighterInstance()
-    .then((instance) =>
-      instance.loadLanguage(LANGUAGE_DEFINITIONS[resolved].load()),
-    )
-    .then(() => {
-      readyLangs.add(resolved);
-    })
-    .catch(() => {
-      // Grammar failed to load/compile — settle on the plain-text fallback.
-      failedLangs.add(resolved);
-    })
-    .finally(() => {
-      pendingLangs.delete(resolved);
-      notify();
-    });
+  if (!resolved || readyLangs.has(resolved)) return;
+  const instance = await getHighlighterInstance();
+  await instance.loadLanguage(LANGUAGE_DEFINITIONS[resolved].load());
+  readyLangs.add(resolved);
 }
 
 export type LineCache = {

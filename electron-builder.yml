@@ -11,7 +11,15 @@ files:
   - LICENSE
   - THIRD_PARTY_NOTICES.md
   - licenses/**/*
+extraResources:
+  - from: resources/omp-desktop-presence.ts
+    to: omp-desktop-presence.ts
 mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+  artifactName: OMP-Desktop-${version}-mac-${arch}.${ext}
   icon: build/icon.icns
   identity: null
   category: public.app-category.developer-tools

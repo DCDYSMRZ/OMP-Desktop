@@ -1,43 +1,72 @@
+import { UserErrorNotice } from '../lib/UserErrorNotice';
+import { UserFacingError, preserveUserError } from '../lib/user-errors';
 // Adapted from PI-Desktop-main SubagentTranscriptTab (LGPL-3.0); display-only native transcript.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { HistoryMessage, NativeMessage, NativeSubagent } from '../../shared/contracts';
-import { DeferredContent, Disclosure, DisclosureAnchor, MessageImage, NativeTaskActivity, Prose, ResourceButton, ThinkingRow, ToolCard } from '../chat/Transcript';
-import { isVisibleImage } from '../chat/message-details';
-import { buildTranscriptEntries, isConversationMessage, type TurnPart } from '../chat/presentation';
-import { record, text, type ToolActivity } from '../chat/model';
-import { IconArrowDown, IconChevronLeft, IconRefresh } from '../ui/icons';
+import type { ChildHistoryRead, HistoryMessage, NativeFrame, NativeSubagent, SavedSubagentEdge, SavedSubagentNavigation, SavedSubagentPage, SessionResourceContext } from '../../shared/contracts';
+import { AssistantTurn, DeferredContent, Disclosure, MessageRow } from '../chat/Transcript';
+import type { TurnChangesProps } from '../chat/TurnChanges';
+import { Prose, ResourceButton } from '../chat/Prose';
+import { automaticDisclosureAnchor, clearDisclosureAnchorReserve, DisclosureAnchor, restoreDisclosureAnchor, TranscriptDisclosureProvider, type DisclosureViewportAnchor } from '../chat/disclosure';
+import { assistantTurnKey, buildTranscriptEntries, isConversationMessage, turnUsage } from '../chat/presentation';
+import { createNativeLiveSequence, messageText, reduceNativeLiveSequence, reconcileNativeLiveSequence, record, text, type ChatMessage } from '../chat/model';
+import { IconArrowDown, IconChevronRight, IconLocate, IconRefresh } from '../ui/icons';
 import { TooltipButton } from '../ui/ui';
-import { useLiveDuration } from './SubagentStage';
-import { ActivityLine } from './LiquidStage';
-import { LiquidSpring } from '../ui/liquid/LiquidSpring';
-import { GlassBead } from '../ui/liquid/GlassBead';
-import { LavaCrack } from '../ui/liquid/LavaCrack';
-import { crackPath, crackPoints } from '../ui/liquid/crack-geometry';
-import { LiquidPool } from '../ui/liquid/LiquidPool';
-import { registerCapsuleTarget } from '../ui/liquid/capsule-morph';
-import { useAgentMotionEvents } from '../lib/agent-motion/agent-events';
-import { useInView } from '../lib/agent-motion/ticker';
-import { liuliInclusions } from '../ui/liquid/liuli-seed';
-import { subagentActivity, subagentError, subagentMetrics, subagentPhase, subagentTitle } from './subagent-model';
+import { SubagentStage, useLiveDuration } from './SubagentStage';
+import { AgentStatus, SubagentStatusText } from './TaskCards';
+import { useInView } from '../lib/useInView';
+import { childHistoryMetrics, formatSubagentCost, formatSubagentTokens, groupSubagentsByToolCall, mergeChildRoster, subagentObservedLive, subagentMetrics, subagentOutcome, subagentPhase, subagentPreview, subagentTitle, subagentTree, type SavedChildRecovery, type SubagentNode } from './subagent-model';
+import { rosterActivity } from './roster-model';
+import { SourceReadScope } from './source-read-scope';
+import { childLiveOverlayAllowed, childTranscriptReadingKey, childReadingAnchorAdjustment, reconcileChildMessages, type ChildReadingState as ReadingState } from './subagent-reading';
+import { createReadingAnchor, type ReadingAnchor } from '../lib/transcript-reading-position';
+import { HistoryPaging, PrependAnchor } from '../chat/HistoryPaging';
+import { AnimatedNumber } from '../ui/motion';
+import { formatElapsed } from '../lib/format-duration';
+import { useDisplayPreferences } from '../lib/display-preferences';
+import { evidenceOf } from '../../shared/subagent-evidence';
+import { useModelDisplayName } from '../lib/use-model-display-name';
+import { captureViewportReadingAnchors, restoreViewportReadingAnchor, viewportReadingAnchorHandoff, type ViewportReadingAnchor } from '../chat/viewport-reading-anchor';
+import { clearProgrammaticScroll, isProgrammaticScroll, noteProgrammaticScroll } from '../ui/motion/programmatic-scroll';
+import { followAfterScroll, interruptTranscriptNavigation, scrollGestureReachesViewport, scrollKeyDirection } from '../chat/transcript-follow';
+import { rebaseChildReadingAnchors } from './subagent-reading';
 
-interface TranscriptPage { fromByte: number; nextByte: number; reset: boolean; messages: NativeMessage[] }
-interface ReadingState { top: number; follow: boolean; anchors?: { id: string; top: number }[] }
-// Only known informational provenance belongs in disclosure; unknown diagnostics remain visible.
+interface ChildPageRead { page: SavedSubagentPage; context: SessionResourceContext }
+// Provenance stays in details; read diagnostics share one quiet disclosure.
 const SOURCE_NOTES: Record<string, true> = {
   'Archive is read-only. Explicit fork stages a bounded private source and artifact snapshot before native creation.': true,
   'Default view follows the last persisted entry, not a verified active native leaf.': true,
 };
 const readingStates = new Map<string, ReadingState>();
-export function SubagentTranscriptTab({ cwd, runtimeId, parentSessionPath, historyLeafId, subagent, subagentId, visible = true, onOpenFile, onOpenSessionResource, onBack }: { cwd: string; runtimeId: string | null; parentSessionPath?: string; historyLeafId?: string | null; subagent?: NativeSubagent; subagentId: string; visible?: boolean; onOpenFile: (path: string) => void; onOpenSessionResource?: (reference: string) => void; onBack: () => void }) {
+export function SubagentTranscriptTab({ cwd, runtimeId, parentHistoryFollowing, observedLive = false, parentSessionPath, historyLeafId, savedAncestry, savedRecovery, subagent, subagentId, agents, ancestors, visible = true, onOpenFile, onOpenChanges, onOpenSubagent, onOpenSavedSubagent, onSavedNavigation, onOpenSessionResource, onResourceContextChange, onTitleChange, onBack }: TurnChangesProps & { cwd: string; runtimeId: string | null; parentHistoryFollowing: boolean; observedLive?: boolean; parentSessionPath?: string; historyLeafId?: string | null; savedAncestry?: SavedSubagentEdge[]; savedRecovery?: SavedChildRecovery; subagent?: NativeSubagent; subagentId: string; agents: NativeSubagent[]; ancestors: NativeSubagent[]; visible?: boolean; onOpenFile: (path: string) => void; onOpenSubagent: (id: string) => void; onOpenSavedSubagent: (agent: NativeSubagent, ancestry: SavedSubagentEdge[]) => void; onSavedNavigation: (navigation: SavedSubagentNavigation) => void; onOpenSessionResource?: (reference: string) => void; onResourceContextChange: (context: SessionResourceContext) => void; onTitleChange: (title: string) => void; onBack: () => void }) {
   const { t, i18n } = useTranslation();
+  const modelDisplayName = useModelDisplayName();
+  const { durationStyle } = useDisplayPreferences();
+  const identityKey = JSON.stringify([runtimeId, parentSessionPath, subagentId, savedAncestry]);
+  const knownChild = useRef<{ key: string; agent?: NativeSubagent }>({ key: identityKey, agent: subagent });
+  if (knownChild.current.key !== identityKey) knownChild.current = { key: identityKey, agent: subagent };
+  else if (subagent) knownChild.current.agent = subagent;
+  subagent = subagent ?? knownChild.current.agent;
+  const [navigation, setNavigation] = useState<SavedSubagentNavigation>();
+  const [sourceTitle, setSourceTitle] = useState('');
+  const titleChange = useRef(onTitleChange);
+  titleChange.current = onTitleChange;
+  const displayName = subagentTitle(subagent ?? { id: subagentId }) || t('chat.subagentUnnamed');
+  useEffect(() => { titleChange.current(displayName); }, [displayName]);
+  const liveChildAgents = useMemo(() => {
+    const find = (nodes: SubagentNode[]): NativeSubagent[] | undefined => {
+      for (const node of nodes) { if (node.agent.id === (subagent?.id ?? subagentId)) return node.children.map(child => child.agent); const found = find(node.children); if (found) return found; }
+      return undefined;
+    };
+    return find(subagentTree(agents)) ?? [];
+  }, [agents, subagentId, subagent?.id]);
   const [messages, setMessages] = useState<HistoryMessage[]>([]);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<Error | string>('');
   const [loading, setLoading] = useState(true);
   const [revision, setRevision] = useState(0);
-  const readingKey = JSON.stringify([runtimeId, parentSessionPath, historyLeafId, subagentId]);
+  const readingKey = childTranscriptReadingKey({ runtimeId, parentSessionPath, parentHistoryFollowing, historyLeafId, savedAncestry, parentToolCallId: subagent?.parentToolCallId, nativeId: subagent?.nativeId, subagentId, historical: subagent?.historical });
   const nativeId = typeof subagent?.nativeId === 'string' ? subagent.nativeId : subagentId;
-  const savedId = subagent?.savedId ?? subagentId;
+  const savedId = subagent?.savedId ?? subagent?.id ?? subagentId;
   const savedOnly = subagent?.historical === true;
   const reading = useRef<ReadingState>(readingStates.get(readingKey) ?? { top: 0, follow: true });
   const [showJump, setShowJump] = useState(!reading.current.follow);
@@ -45,16 +74,15 @@ export function SubagentTranscriptTab({ cwd, runtimeId, parentSessionPath, histo
   const contentRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLElement>(null);
   const headerInView = useInView(headerRef);
-  const headerStyle = useMemo(() => liuliInclusions(subagent?.id ?? subagentId) as CSSProperties, [subagent?.id, subagentId]);
-  const [rippleKey, setRippleKey] = useState(0);
-  useAgentMotionEvents(subagent, event => { if (event.type === 'tool' && visible && headerInView) setRippleKey(value => value + 1); });
-  useLayoutEffect(() => {
-    if (!subagent?.id) return;
-    registerCapsuleTarget(subagent.id, visible ? headerRef.current : null);
-    return () => registerCapsuleTarget(subagent.id, null);
-  }, [subagent?.id, visible]);
-  const userScrolling = useRef(false);
+  const prependAnchor = useRef<PrependAnchor>(null);
+  const textAnchors = useRef<ViewportReadingAnchor[]>([]);
+  const navigationEpoch = useRef(0);
+  const pendingReportReveal = useRef(false);
+  const observedTop = useRef<number | null>(null);
   const scrollIdle = useRef<number | undefined>(undefined);
+  const explicitScrollInput = useRef(false);
+  const scrollbarDragging = useRef(false);
+  const touchY = useRef<number | undefined>(undefined);
   const ready = useRef(false);
   const [before, setBefore] = useState<string>();
   const [diagnostics, setDiagnostics] = useState<string[]>([]);
@@ -62,281 +90,381 @@ export function SubagentTranscriptTab({ cwd, runtimeId, parentSessionPath, histo
   const [historyMode, setHistoryMode] = useState(!runtimeId || savedOnly);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const historyRevision = useRef<string | undefined>(undefined);
-  const historyIds = useRef(new Set<string>());
-  const disclosureAnchor = useRef<{ element: HTMLElement; top: number } | null>(null);
+  const paging = useRef(false);
+  const disclosureAnchor = useRef<DisclosureViewportAnchor | null>(null);
+  const prepended = useRef(false);
+  const pageBefore = useRef<ChildHistoryRead | undefined>(reading.current.before);
+  const contextChange = useRef(onResourceContextChange);
+  contextChange.current = onResourceContextChange;
+  const liveSourceKey = readingKey;
+  const [liveSequence, setLiveSequence] = useState(createNativeLiveSequence);
+  const displayWindow = useRef<ChatMessage[]>([]);
+  const acceptLiveFrame = (frame: NativeFrame) => setLiveSequence(previous => reduceNativeLiveSequence(previous, frame, liveSourceKey, liveSourceKey));
+  useLayoutEffect(() => { setLiveSequence(createNativeLiveSequence()); displayWindow.current = []; }, [liveSourceKey]);
+  const generation = useMemo(() => new SourceReadScope(readingKey), [readingKey, historyLeafId, nativeId, savedId, savedOnly, savedRecovery, revision, historyMode, visible, onSavedNavigation]);
+  const currentGeneration = useRef(generation);
+  if (currentGeneration.current !== generation) { currentGeneration.current.invalidate(); currentGeneration.current = generation; }
+  useLayoutEffect(() => { generation.active = true; paging.current = false; setLoadingEarlier(false); return () => generation.invalidate(); }, [generation]);
+  useLayoutEffect(() => {
+    clearDisclosureAnchorReserve(contentRef.current); disclosureAnchor.current = null;
+    prependAnchor.current?.cancel(); textAnchors.current = []; observedTop.current = null; navigationEpoch.current++; pendingReportReveal.current = false;
+    explicitScrollInput.current = false; clearTimeout(scrollIdle.current);
+    reading.current = readingStates.get(readingKey) ?? { top: 0, follow: true };
+    prepended.current = false;
+    pageBefore.current = reading.current.before; historyRevision.current = undefined; ready.current = false;
+    setMessages([]); setBefore(undefined); setNavigation(undefined); setSourceReference(undefined); setSourceTitle(''); setDiagnostics([]); setShowJump(!reading.current.follow);
+  }, [readingKey]);
+  useEffect(() => {
+    // Seed a newly opened source once; subsequent frames come from the subscription.
+    const frame = record(subagent?.lastEvent);
+    if (!subagent?.observationLost && typeof frame.type === 'string') acceptLiveFrame(frame as NativeFrame);
+  }, [liveSourceKey]);
+  useEffect(() => { if (subagent?.observationLost) acceptLiveFrame({ type: 'runtime_exit' }); }, [subagent?.observationLost, liveSourceKey]);
+  const readPage = async (selection?: ChildHistoryRead, savedFallback = false, boundContext?: SessionResourceContext): Promise<ChildPageRead> => {
+    const context = boundContext ?? (runtimeId && !savedOnly && !historyMode && !savedFallback
+      ? { kind: 'runtime' as const, runtimeId, subagentId: nativeId }
+      : parentSessionPath ? { kind: 'saved' as const, parentPath: parentSessionPath, subagentId: savedRecovery?.subagentId ?? savedId, leafId: historyLeafId, ancestry: savedRecovery?.ancestry ?? savedAncestry } : undefined);
+    if (!context?.subagentId) throw new UserFacingError(t('omp.subagent.historyUnavailable'));
+    const page = context.kind === 'runtime'
+      ? await window.ompDesktop.readRuntimeSubagent({ runtimeId: context.runtimeId, subagentId: context.subagentId, ...selection })
+      : await window.ompDesktop.readHistorySubagent({ parentPath: context.parentPath, subagentId: context.subagentId, leafId: context.leafId, ancestry: context.ancestry, ...selection });
+    return { page, context };
+  };
+  const publishPage = ({ page, context }: ChildPageRead) => {
+    const retainEarlier = ready.current && prepended.current && !pageBefore.current;
+    ready.current = true; historyRevision.current = page.revision;
+    reading.current = { ...reading.current, before: pageBefore.current, context, childLeafId: page.selectedLeafId, childRevision: page.revision };
+    setMessages(current => {
+      if (!retainEarlier) return page.messages;
+      const ids = new Set(page.messages.map(row => row.id));
+      return [...current.filter(row => !ids.has(row.id)), ...page.messages];
+    });
+    if (!retainEarlier) setBefore(page.hasMore ? page.nextBefore : undefined);
+    setDiagnostics(page.diagnostics); setSourceReference(page.sourceReference); setError('');
+    setNavigation(page.navigation); setSourceTitle(page.session.title.trim());
+    contextChange.current(context);
+    if (page.navigation) onSavedNavigation(page.navigation);
+    if (context.kind === 'saved' && !historyMode) setHistoryMode(true);
+  };
+  const measureReadingAnchors = (visibleOnly: boolean): ReadingAnchor[] => {
+    const node = scrollRef.current;
+    if (!node) return [];
+    const viewport = node.getBoundingClientRect();
+    const anchors: ReadingAnchor[] = [];
+    for (const row of node.querySelectorAll<HTMLElement>('[data-presentation-key], [data-message-id], [data-minimap-id]')) {
+      const rect = row.getBoundingClientRect();
+      if (rect.height === 0 || (visibleOnly && (rect.bottom <= viewport.top || rect.top >= viewport.bottom))) continue;
+      const anchor = createReadingAnchor({ presentationKey: row.dataset.presentationKey, messageId: row.dataset.messageId, minimapId: row.dataset.minimapId, turnId: row.closest<HTMLElement>('[data-minimap-id]')?.dataset.minimapId }, rect.top - viewport.top);
+      if (anchor) anchors.push(anchor);
+    }
+    return anchors;
+  };
   const captureReadingAnchors = () => {
     const node = scrollRef.current;
     if (!visible || !node || !node.clientHeight || reading.current.follow) return;
-    const viewport = node.getBoundingClientRect();
-    const anchors: NonNullable<ReadingState['anchors']> = [];
-    for (const row of node.querySelectorAll<HTMLElement>('[data-message-id]')) {
-      const rect = row.getBoundingClientRect();
-      if (rect.height > 0 && rect.bottom > viewport.top && rect.top < viewport.bottom) anchors.push({ id: row.dataset.messageId!, top: rect.top - viewport.top });
-    }
-    reading.current.anchors = anchors.sort((left, right) => Math.abs(left.top) - Math.abs(right.top));
+    textAnchors.current = captureViewportReadingAnchors(node);
+    reading.current.anchors = measureReadingAnchors(true).sort((left, right) => Math.abs(left.top) - Math.abs(right.top));
     reading.current.top = node.scrollTop;
+    observedTop.current = node.scrollTop;
+  };
+  const acceptNativeMovement = () => {
+    const node = scrollRef.current;
+    if (!node || !explicitScrollInput.current || observedTop.current === null || isProgrammaticScroll(node)) return;
+    const delta = node.scrollTop - observedTop.current;
+    if (!delta) return;
+    navigationEpoch.current++; pendingReportReveal.current = false; prependAnchor.current?.cancel(); disclosureAnchor.current = null;
+    interruptTranscriptNavigation(node);
+    rebaseChildReadingAnchors(reading.current, textAnchors.current, delta);
+    reading.current.follow = followAfterScroll(reading.current.follow, true, node.scrollHeight - node.scrollTop - node.clientHeight, delta);
+    reading.current.top = node.scrollTop; observedTop.current = node.scrollTop;
+    setShowJump(!reading.current.follow);
   };
   const syncReading = () => {
     const node = scrollRef.current;
-    if (!visible || !node || !node.clientHeight || !ready.current || userScrolling.current) return;
-    const viewportTop = node.getBoundingClientRect().top;
-    if (disclosureAnchor.current?.element.isConnected) {
-      node.scrollTop += disclosureAnchor.current.element.getBoundingClientRect().top - viewportTop - disclosureAnchor.current.top;
+    if (!visible || !node || !node.clientHeight || !ready.current || prependAnchor.current?.active) return;
+    acceptNativeMovement();
+    if (disclosureAnchor.current?.element.isConnected && contentRef.current) {
+      restoreDisclosureAnchor(node, contentRef.current, disclosureAnchor.current);
     } else if (reading.current.follow) {
+      clearDisclosureAnchorReserve(contentRef.current);
       node.scrollTop = node.scrollHeight;
-      reading.current.anchors = undefined;
-    } else {
-      const rows = Array.from(node.querySelectorAll<HTMLElement>('[data-message-id]'));
-      let restored = false;
-      for (const saved of reading.current.anchors ?? []) {
-        const row = rows.find(candidate => candidate.dataset.messageId === saved.id && candidate.getBoundingClientRect().height > 0);
-        if (!row) continue;
-        node.scrollTop += row.getBoundingClientRect().top - viewportTop - saved.top;
-        restored = true;
-        break;
-      }
-      if (!restored) node.scrollTop = reading.current.top;
+      reading.current.anchors = undefined; textAnchors.current = [];
+    } else if (!textAnchors.current.some(anchor => restoreViewportReadingAnchor(node, anchor))) {
+      const adjustment = childReadingAnchorAdjustment(reading.current.anchors ?? [], measureReadingAnchors(false));
+      if (adjustment !== undefined) node.scrollTop += adjustment;
+      else if (observedTop.current === null) node.scrollTop = reading.current.top;
     }
-    reading.current.top = node.scrollTop;
+    noteProgrammaticScroll(node);
+    reading.current.top = node.scrollTop; observedTop.current = node.scrollTop;
+    captureReadingAnchors();
   };
   const latestSync = useRef(syncReading);
   latestSync.current = syncReading;
-  const loadEarlier = async () => {
-    if (!parentSessionPath || !before || loadingEarlier) return;
-    disclosureAnchor.current = null; userScrolling.current = false; reading.current.follow = false; setShowJump(true);
-    captureReadingAnchors();
-    setLoadingEarlier(true);
+  const navigateLatest = async () => {
+    if (loading || paging.current || !generation.active) return;
+    const accepts = generation.begin();
+    const epoch = ++navigationEpoch.current; prependAnchor.current?.cancel();
+    if (scrollRef.current) interruptTranscriptNavigation(scrollRef.current);
+    paging.current = true; setLoadingEarlier(true);
     try {
-      const page = await window.ompDesktop.readHistorySubagent({ parentPath: parentSessionPath, subagentId: savedId, leafId: historyLeafId, before });
-      if (historyRevision.current && historyRevision.current !== page.revision) throw new Error(t('omp.subagent.historyChanged'));
-      captureReadingAnchors();
-      clearTimeout(scrollIdle.current);
-      userScrolling.current = false; reading.current.follow = false; setShowJump(true);
-      const added = page.messages.filter(message => !historyIds.current.has(message.id));
-      added.forEach(message => historyIds.current.add(message.id));
-      setMessages(previous => [...added, ...previous]);
-      setBefore(page.hasMore ? page.nextBefore : undefined); setDiagnostics(page.diagnostics); setError('');
-      setSourceReference(previous => page.sourceReference ?? previous);
-    } catch (cause) { setError(String(cause)); }
-    finally { setLoadingEarlier(false); }
+      const result = await readPage(undefined, false, reading.current.context);
+      if (!accepts() || epoch !== navigationEpoch.current) return;
+      ready.current = false; prepended.current = false; disclosureAnchor.current = null; textAnchors.current = []; observedTop.current = null;
+      clearDisclosureAnchorReserve(contentRef.current);
+      pageBefore.current = undefined; reading.current = { top: 0, follow: true, context: reading.current.context };
+      setShowJump(false); publishPage(result);
+    } catch (cause) { if (accepts()) setError(preserveUserError(cause)); }
+    finally { if (accepts()) { paging.current = false; setLoadingEarlier(false); } }
   };
+  const loadEarlier = async () => {
+    if (!before || loading || paging.current || !generation.active) return;
+    const accepts = generation.begin();
+    paging.current = true; setLoadingEarlier(true); setError('');
+    try {
+      const result = await readPage({ before }, false, reading.current.context);
+      if (!accepts()) return;
+      if (historyRevision.current !== result.page.revision) throw new UserFacingError(t('omp.subagent.historyChanged'));
+      prepended.current = true;
+      const ids = new Set(messages.map(row => row.id));
+      setMessages(current => [...result.page.messages.filter(row => !ids.has(row.id)), ...current]);
+      setBefore(result.page.hasMore ? result.page.nextBefore : undefined);
+    } catch (cause) { if (accepts()) setError(preserveUserError(cause)); throw cause; }
+    finally { if (accepts()) { paging.current = false; setLoadingEarlier(false); } }
+  };
+  const returnLatest = () => { void navigateLatest(); };
+  const scheduleReadingIdle = () => {
+    clearTimeout(scrollIdle.current);
+    scrollIdle.current = window.setTimeout(() => { latestSync.current(); if (!scrollbarDragging.current) explicitScrollInput.current = false; }, 160);
+  };
+  useEffect(() => () => clearTimeout(scrollIdle.current), []);
+  useEffect(() => {
+    const release = () => { if (scrollbarDragging.current) { scrollbarDragging.current = false; scheduleReadingIdle(); } };
+    window.addEventListener('pointerup', release); window.addEventListener('pointercancel', release);
+    return () => { window.removeEventListener('pointerup', release); window.removeEventListener('pointercancel', release); };
+  }, []);
   const beginReading = () => {
-    disclosureAnchor.current = null; reading.current.anchors = undefined;
-    userScrolling.current = true; reading.current.follow = false; setShowJump(true);
-    clearTimeout(scrollIdle.current);
-    scrollIdle.current = window.setTimeout(() => { userScrolling.current = false; captureReadingAnchors(); }, 180);
+    const node = scrollRef.current;
+    if (!node) return;
+    navigationEpoch.current++; pendingReportReveal.current = false; prependAnchor.current?.cancel();
+    interruptTranscriptNavigation(node);
+    acceptNativeMovement();
+    explicitScrollInput.current = true;
+    scheduleReadingIdle();
+    clearProgrammaticScroll(node); disclosureAnchor.current = null;
+    reading.current.follow = false; setShowJump(true);
+    if (!textAnchors.current.length) captureReadingAnchors();
   };
-  useEffect(() => () => {
-    clearTimeout(scrollIdle.current);
+  const protectReading = () => {
+    if (!visible || !ready.current) return;
+    navigationEpoch.current++; pendingReportReveal.current = false; prependAnchor.current?.cancel(); disclosureAnchor.current = null;
+    explicitScrollInput.current = false; clearTimeout(scrollIdle.current);
+    if (scrollRef.current) interruptTranscriptNavigation(scrollRef.current);
+    reading.current.follow = false; captureReadingAnchors(); setShowJump(true);
+  };
+  const latestProtectReading = useRef(protectReading);
+  latestProtectReading.current = protectReading;
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (!node || !visible) return;
+    const navigate = () => latestProtectReading.current();
+    node.addEventListener('transcript-navigation-start', navigate);
+    return () => node.removeEventListener('transcript-navigation-start', navigate);
+  }, [visible, readingKey]);
+  useLayoutEffect(() => () => {
     readingStates.delete(readingKey); readingStates.set(readingKey, { ...reading.current });
     if (readingStates.size > 128) readingStates.delete(readingStates.keys().next().value!);
   }, [readingKey]);
   useEffect(() => {
-    setError(''); setLoading(true);
+    if (visible) { setError(''); setLoading(true); }
     if (!runtimeId && !parentSessionPath) { setLoading(false); return; }
-    let active = true; let busy = false; let pending = false; let cursor = 0; let initial = true;
-    let usingHistory = !runtimeId || savedOnly;
-    const loadHistory = async () => {
-      if (!parentSessionPath) return;
-      const page = await window.ompDesktop.readHistorySubagent({ parentPath: parentSessionPath, subagentId: savedId, leafId: historyLeafId });
-      if (!active) return;
-      usingHistory = true;
-      ready.current = true; setHistoryMode(true);
-      const sameRevision = historyRevision.current === page.revision;
-      historyRevision.current = page.revision;
-      if (!sameRevision) {
-        historyIds.current = new Set(page.messages.map(message => message.id));
-        setMessages(page.messages);
-        setBefore(page.hasMore ? page.nextBefore : undefined);
-      }
-      setDiagnostics(page.diagnostics); setError('');
-      setSourceReference(previous => sameRevision ? page.sourceReference ?? previous : page.sourceReference);
-    };
+    let active = true; let busy = false; let pending = false;
     const load = async () => {
-      if (!active) return;
+      if (!visible || !active || paging.current) return;
       if (busy) { pending = true; return; }
       busy = true;
-      try {
-        if (usingHistory) { await loadHistory(); return; }
-        do {
-          pending = false;
-          const page = await window.ompDesktop.request<TranscriptPage>(runtimeId!, { type: 'get_subagent_messages', subagentId: nativeId, fromByte: cursor });
-          if (!active) return;
-          if (!Number.isSafeInteger(page.nextByte) || page.nextByte < 0 || (!page.reset && page.nextByte < cursor) || !Array.isArray(page.messages)) throw new Error('Invalid native subagent transcript cursor');
-          cursor = page.nextByte;
-          const replace = initial || page.reset; initial = false;
-          setHistoryMode(false); setBefore(undefined); setDiagnostics([]); setSourceReference(undefined);
-          if (replace || page.messages.length) {
-            ready.current = true;
-            const rows = page.messages.map((raw, index) => ({ id: `rpc:${page.fromByte}:${index}`, raw }));
-            setMessages(previous => replace ? rows : [...previous, ...rows]);
+      do {
+        pending = false;
+        const requestedBefore = pageBefore.current;
+        const accepts = generation.begin();
+        try {
+          let result: ChildPageRead;
+          try { result = await readPage(requestedBefore, false, requestedBefore ? reading.current.context : undefined); }
+          catch (cause) {
+            if (!active || !accepts()) break;
+            if (!runtimeId || savedOnly || historyMode || !parentSessionPath) throw cause;
+            try { result = await readPage(requestedBefore, true); }
+            catch (fallback) { throw new Error(`${String(cause)}\n${String(fallback)}`); }
           }
-          setError('');
-        } while (pending && active);
-      } catch (cause) {
-        if (active && parentSessionPath) {
-          try { await loadHistory(); } catch (historyError) { if (active) setError(String(historyError)); }
-        } else if (active) setError(String(cause));
-      }
-      finally { busy = false; if (active) setLoading(false); }
+          if (active && accepts() && requestedBefore === pageBefore.current) publishPage(result);
+        } catch (cause) { if (active && accepts()) setError(preserveUserError(cause)); }
+        finally { if (active && accepts()) setLoading(false); }
+      } while (pending && active && generation.active && !paging.current);
+      busy = false;
     };
     const unsubscribe = window.ompDesktop.onRuntimeEvent(event => {
-      if (event.runtimeId !== runtimeId) return;
-      if (usingHistory) return;
-      if (event.kind === 'exit' || event.kind === 'error') { setError(event.error || t('omp.subagent.runtimeStopped')); return; }
-      const payload = event.frame?.payload as Record<string, unknown> | undefined;
-      const progress = payload?.progress as Record<string, unknown> | undefined;
-      const eventId = payload?.id ?? progress?.id;
-      if ((event.frame?.type.startsWith('subagent_') && (!eventId || eventId === nativeId)) || event.frame?.type === 'session_settled' || event.frame?.type === 'agent_end') void load();
+      if (!active || !generation.active || !observedLive || savedOnly || event.runtimeId !== runtimeId) return;
+      if (event.kind === 'exit' || event.kind === 'error') { acceptLiveFrame({ type: event.kind === 'exit' ? 'runtime_exit' : 'runtime_error' }); setError(event.error || t('omp.subagent.runtimeStopped')); return; }
+      const payload = record(event.frame?.payload);
+      const eventId = payload.id ?? record(payload.progress).id;
+      if (event.frame?.type === 'subagent_event' && eventId === nativeId) {
+        const frame = record(payload.event);
+        if (typeof frame.type === 'string') acceptLiveFrame(frame as NativeFrame);
+      }
+      const childFrame = text(record(payload.event).type);
+      if ((event.frame?.type === 'subagent_lifecycle' && (!eventId || eventId === nativeId)) || (event.frame?.type === 'subagent_event' && eventId === nativeId && ['message_end', 'auto_compaction_end', 'agent_end', 'turn_end'].includes(childFrame)) || event.frame?.type === 'session_settled' || event.frame?.type === 'agent_end') void load();
     });
     void load();
     return () => { active = false; unsubscribe(); };
-  }, [runtimeId, parentSessionPath, historyLeafId, subagentId, savedId, savedOnly, nativeId, revision, t]);
-  useLayoutEffect(() => {
-    latestSync.current();
-    // content-visibility can replace intrinsic row heights after the commit.
-    // Keep the same message/pixel anchor as those measurements settle.
-    let secondFrame = 0;
-    const frame = requestAnimationFrame(() => { latestSync.current(); secondFrame = requestAnimationFrame(() => latestSync.current()); });
-    return () => { cancelAnimationFrame(frame); cancelAnimationFrame(secondFrame); };
-  });
+  }, [runtimeId, observedLive, parentSessionPath, historyLeafId, savedAncestry, subagentId, savedId, savedOnly, nativeId, revision, historyMode, visible, onSavedNavigation, generation, t]);
+  useLayoutEffect(() => { latestSync.current(); });
   useEffect(() => {
     const content = contentRef.current;
     const viewport = scrollRef.current;
     if (!content || !viewport || !visible) return;
     const observer = new ResizeObserver(() => latestSync.current());
-    observer.observe(content, { box: 'border-box' });
-    observer.observe(viewport, { box: 'border-box' });
-    for (const row of content.querySelectorAll<HTMLElement>('[data-message-id]')) observer.observe(row, { box: 'border-box' });
-    return () => observer.disconnect();
-  }, [visible, messages]);
+    const observed = new Set<Element>();
+    const enroll = () => {
+      const current = new Set<Element>([content, viewport, ...content.querySelectorAll('[data-presentation-key], [data-message-id], [data-minimap-id], .ui-collapse')]);
+      for (const element of observed) if (!current.has(element)) { observer.unobserve(element); observed.delete(element); }
+      for (const element of current) if (!observed.has(element)) { observer.observe(element, { box: 'border-box' }); observed.add(element); }
+    };
+    enroll();
+    const mutations = new MutationObserver(enroll); mutations.observe(content, { childList: true, subtree: true });
+    return () => { mutations.disconnect(); observer.disconnect(); };
+  }, [visible, readingKey]);
   const phase = subagent ? subagentPhase(subagent) : 'unknown';
-  const metrics = subagent ? subagentMetrics(subagent) : undefined;
-  const duration = useLiveDuration(metrics?.durationMs, phase === 'running');
-  const elapsed = duration === undefined ? undefined : `${Math.floor(duration / 60000).toString().padStart(2, '0')}:${Math.floor(duration / 1000 % 60).toString().padStart(2, '0')}`;
-  const activity = subagent ? subagentActivity(subagent) : undefined;
-  const metricItems = [
-    metrics?.toolCount === undefined ? undefined : t('omp.panel.tools', { count: metrics.toolCount }),
-    metrics?.tokens === undefined ? undefined : t('omp.panel.tokens', { value: new Intl.NumberFormat(i18n.language, { notation: 'compact', maximumFractionDigits: 1 }).format(metrics.tokens) }),
-    metrics?.cost === undefined ? undefined : new Intl.NumberFormat(i18n.language, { style: 'currency', currency: 'USD', maximumFractionDigits: 4 }).format(metrics.cost),
-  ].filter((value): value is string => value !== undefined);
-  const taskError = subagent ? subagentError(subagent) : '';
-  const assignment = typeof subagent?.assignment === 'string' ? subagent.assignment : subagent?.task;
+  const historyRows = useMemo(() => messages.map(row => ({ ...row, source: 'history' as const, streaming: false })), [messages]);
+  const historyMetrics = useMemo(() => childHistoryMetrics(historyRows), [historyRows]);
+  const historyUsage = useMemo(() => turnUsage(historyRows), [historyRows]);
+  const snapshotMetrics = subagent ? subagentMetrics(subagent) : {};
+  const metrics = { toolCount: snapshotMetrics.toolCount ?? historyMetrics.toolCount, tokens: historyUsage.tokens, cost: snapshotMetrics.cost ?? historyMetrics.cost, durationMs: !before && !pageBefore.current ? historyMetrics.durationMs ?? snapshotMetrics.durationMs : snapshotMetrics.durationMs ?? historyMetrics.durationMs };
+  const modelMessage = liveSequence.messages.findLast(row => typeof row.raw.model === 'string') ?? messages.findLast(row => typeof row.raw.model === 'string');
+  const live = !!subagent && !!runtimeId && !historyMode && subagentObservedLive(subagent, observedLive);
+  const duration = useLiveDuration(metrics.durationMs, live && phase === 'running', visible && headerInView);
+  const elapsed = duration === undefined ? undefined : formatElapsed(duration, durationStyle, i18n.language);
+  const activity = subagent ? rosterActivity(subagent, t) : undefined;
+  const assignment = [subagent?.assignment, subagent?.progress?.assignment, subagent?.task, subagent?.progress?.task].find((value): value is string => typeof value === 'string' && value.trim().length > 0);
   const instructionRows = messages.filter(row => !isConversationMessage(row.raw));
-  const conversationRows = messages.filter(row => isConversationMessage(row.raw));
-  const firstUserId = conversationRows.find(row => row.raw.role === 'user')?.id;
-  const uniqueDiagnostics = [...new Set(diagnostics)];
+  const uniqueDiagnostics = [...new Set([...diagnostics, ...(error && !(error instanceof UserFacingError) ? [error instanceof Error ? error.message : error] : []), ...instructionRows.map(row => text(row.raw.errorMessage)).filter(Boolean)])];
   const sourceNotes = uniqueDiagnostics.filter(diagnostic => SOURCE_NOTES[diagnostic] === true);
   const visibleDiagnostics = uniqueDiagnostics.filter(diagnostic => SOURCE_NOTES[diagnostic] !== true);
   const renderProse = (source: string) => <Prose source={source} cwd={cwd} onOpenFile={onOpenFile} onOpenSessionResource={onOpenSessionResource} />;
   const body = { cwd, onOpenFile, onOpenSessionResource };
-  const { entries } = buildTranscriptEntries(conversationRows.map(row => ({ ...row, source: 'history' as const, streaming: false })), {});
-  const projectedTools = new Map<string, Extract<TurnPart, { kind: 'tool' }>>();
-  const toolsByKey = new Map<string, ToolActivity>();
-  for (const entry of entries) if (entry.kind === 'assistant-turn') for (const part of entry.parts) {
-    if (part.kind !== 'tool') continue;
-    projectedTools.set(part.tool.id, part);
-    toolsByKey.set(part.key, part.tool);
-  }
-  const sourceRows = new Map(conversationRows.map(row => [row.raw, row]));
-  const renderTool = (tool: ToolActivity, key: string) => {
-    const result = record(tool.result);
-    const source = sourceRows.get(tool.result as NativeMessage);
-    const deferred = result.historyResourceDeferred === true;
-    const activity = tool.status === 'pending' && phase === 'running' && !historyMode ? { ...tool, status: 'running' as const } : tool;
-    return <div key={key}><ToolCard tool={activity} {...body}>{deferred ? <DeferredContent reference={source?.resourceReference} onOpen={onOpenSessionResource} /> : undefined}</ToolCard>{!deferred && source?.resourceReference && <div className="message-actions"><ResourceButton reference={source.resourceReference} onOpen={onOpenSessionResource} /></div>}</div>;
+  const liveOverlay = childLiveOverlayAllowed({ runtimeId, observedLive: !!subagent && subagentObservedLive(subagent, observedLive), parentHistoryFollowing, historical: savedOnly, historyMode, before: pageBefore.current });
+  const displayRows = reconcileChildMessages(messages, liveSequence.messages, liveSourceKey, liveOverlay, displayWindow.current);
+  const assignmentRowId = !before && !pageBefore.current ? displayRows.find(row => row.raw.role === 'user')?.id : undefined;
+  const assignmentRow = assignmentRowId ? displayRows.find(row => row.id === assignmentRowId) : undefined;
+  const fullAssignment = assignmentRow ? messageText(assignmentRow.raw) : assignment;
+  const currentOutcome = subagentOutcome(subagent ?? { id: subagentId }, pageBefore.current ? [] : displayRows);
+  const lastOutcome = useRef({ key: readingKey, value: currentOutcome });
+  if (lastOutcome.current.key !== readingKey || (!pageBefore.current && currentOutcome.report != null)) lastOutcome.current = { key: readingKey, value: currentOutcome };
+  const outcome = pageBefore.current || currentOutcome.report == null ? { ...lastOutcome.current.value, summary: currentOutcome.summary || lastOutcome.current.value.summary, phase: currentOutcome.phase, tone: currentOutcome.phase === 'completed' ? lastOutcome.current.value.issueCount ? 'issues' as const : 'completed' as const : currentOutcome.tone } : currentOutcome;
+  const fallbackReport = !pageBefore.current && !outcome.reportRowId && outcome.report != null ? (typeof outcome.report === 'string' ? outcome.report : `\`\`\`json\n${JSON.stringify(outcome.report, null, 2)}\n\`\`\``) : undefined;
+  const reportRef = useRef<HTMLDivElement>(null);
+  const revealReport = async () => {
+    if (pageBefore.current) { pendingReportReveal.current = true; await navigateLatest(); return; }
+    const target = outcome.reportRowId ? [...(contentRef.current?.querySelectorAll<HTMLElement>('[data-message-id]') ?? [])].find(node => node.dataset.messageId === outcome.reportRowId && node.getBoundingClientRect().height > 0) : reportRef.current;
+    if (!target || !scrollRef.current) return;
+    navigationEpoch.current++; prependAnchor.current?.cancel(); disclosureAnchor.current = null; reading.current.follow = false;
+    interruptTranscriptNavigation(scrollRef.current);
+    scrollRef.current.scrollTop += target.getBoundingClientRect().top - scrollRef.current.getBoundingClientRect().top - 16;
+    noteProgrammaticScroll(scrollRef.current); observedTop.current = scrollRef.current.scrollTop;
+    target.tabIndex = -1; target.focus({ preventScroll: true }); captureReadingAnchors(); setShowJump(true);
   };
-  const holdDisclosure = (element: HTMLElement | null) => {
+  useLayoutEffect(() => { displayWindow.current = displayRows; });
+  useLayoutEffect(() => {
+    if (pendingReportReveal.current && !pageBefore.current && !loadingEarlier) { pendingReportReveal.current = false; void revealReport(); }
+  });
+  useEffect(() => {
+    if (!liveOverlay) return;
+    const saved: ChatMessage[] = messages.map(row => ({ ...row, source: 'history', streaming: false }));
+    setLiveSequence(previous => reconcileNativeLiveSequence(previous, saved, liveSourceKey));
+  }, [messages, liveSourceKey, liveOverlay]);
+  const childAgents = navigation ? mergeChildRoster(navigation.children, liveChildAgents) : liveChildAgents;
+  const { entries, renderedTools } = buildTranscriptEntries(displayRows, {}, childAgents);
+  const holdDisclosure = (element: HTMLElement | null, options?: { automatic?: boolean }) => {
     if (!element || !scrollRef.current) return;
-    disclosureAnchor.current = { element, top: element.getBoundingClientRect().top - scrollRef.current.getBoundingClientRect().top };
-    userScrolling.current = false; reading.current.follow = false; captureReadingAnchors(); setShowJump(true);
-  };
-  const renderContent = (row: HistoryMessage) => { const message = row.raw; return <div className="prose-chat selectable">{typeof message.content === 'string' ? renderProse(message.content) : Array.isArray(message.content) ? message.content.map((raw: unknown, blockIndex: number) => {
-    if (!raw || typeof raw !== 'object') return null;
-    const block = raw as Record<string, unknown>;
-    if (block.type === 'text' && typeof block.text === 'string') return <div key={blockIndex}>{renderProse(block.text)}</div>;
-    if (block.type === 'thinking' && typeof block.thinking === 'string') return <ThinkingRow key={blockIndex} value={block.thinking} {...body} />;
-    if (block.type === 'toolCall' && text(block.id)) {
-      const key = `${row.id}:block:${blockIndex}`;
-      const tool = toolsByKey.get(key);
-      return tool ? renderTool(tool, key) : null;
+    if (options?.automatic) {
+      disclosureAnchor.current = reading.current.follow ? null : automaticDisclosureAnchor(scrollRef.current, element);
+      if (!reading.current.follow) captureReadingAnchors();
+      return;
     }
-    if (isVisibleImage(block)) return <MessageImage key={blockIndex} value={block} onOpenSessionResource={onOpenSessionResource} />;
-    return <Disclosure key={blockIndex} className="tool-row" title={<span className="tool-row-name">{String(block.type || t('omp.workspace.nativeSubagent'))}</span>}><pre>{JSON.stringify(block, null, 2)}</pre></Disclosure>;
-  }) : <pre>{JSON.stringify(message, null, 2)}</pre>}</div>; };
+    disclosureAnchor.current = { element, top: element.getBoundingClientRect().top - scrollRef.current.getBoundingClientRect().top };
+    navigationEpoch.current++; pendingReportReveal.current = false; prependAnchor.current?.cancel(); reading.current.follow = false; captureReadingAnchors(); setShowJump(true);
+    interruptTranscriptNavigation(scrollRef.current);
+  };
+  useLayoutEffect(() => {
+    if (phase === 'running') { clearDisclosureAnchorReserve(contentRef.current); disclosureAnchor.current = null; }
+  }, [phase]);
+  const { byToolCall, resolvedTrees } = groupSubagentsByToolCall(childAgents, renderedTools);
+  const openChild = (id: string) => {
+    const child = childAgents.find(agent => agent.id === id);
+    if (navigation && child && navigation.children.some(saved => saved.id === (child.savedId ?? child.id))) onOpenSavedSubagent({ ...child, id: child.savedId ?? child.id }, navigation.childAncestry);
+    else onOpenSubagent(id);
+  };
+  const displayedAncestors = navigation?.ancestors ?? ancestors;
+  const title = displayName;
+  const openAncestor = (index: number) => {
+    const ancestor = displayedAncestors[index];
+    if (navigation) onOpenSavedSubagent(ancestor, navigation.ancestry.slice(0, index));
+    else onOpenSubagent(ancestor.id);
+  };
   return <div className="subagent-transcript-tab" data-testid="subagent-transcript-tab">
-    <header ref={headerRef} className={`subagent-detail-header liuli${visible && headerInView ? '' : ' is-offscreen'}`} data-phase={phase} style={headerStyle}>
-      <LiquidPool phase={phase} rippleKey={rippleKey} radius={20} />
-      <GlassBead agent={subagent} size={40} />
-      {subagent && <DetailAgentIdentity agent={subagent} />}
+    <header ref={headerRef} className="subagent-detail-header" data-phase={phase}>
+      <nav className="subagent-detail-identity" aria-label={t('omp.panel.ancestry')}>
+        <button type="button" onClick={onBack}>{t('omp.roster.main')}</button>
+        {displayedAncestors.map((ancestor, index) => <span className="subagent-breadcrumb" key={`${index}:${ancestor.id}`}><IconChevronRight size="var(--icon-caption)" /><button type="button" onClick={() => openAncestor(index)}>{subagentTitle(ancestor) || t('chat.subagentUnnamed')}</button></span>)}
+        <span className="subagent-breadcrumb"><IconChevronRight size="var(--icon-caption)" /><strong data-agent-identity={subagentId} title={title}>{title}</strong></span>
+      </nav>
       <div className="subagent-detail-controls">
-        <button type="button" className="icon-btn" title={t('omp.panel.back')} aria-label={t('omp.panel.back')} onClick={onBack}><IconChevronLeft size={16} /></button>
-        <button type="button" className="icon-btn" disabled={(!runtimeId && !parentSessionPath) || loading || loadingEarlier} title={t('omp.workspace.refreshTranscript')} aria-label={t('omp.workspace.refreshTranscript')} onClick={() => setRevision(value => value + 1)}><IconRefresh size={16} /></button>
+        <button type="button" className="icon-btn" title={t('omp.roster.locate')} aria-label={t('omp.roster.locate')} onClick={onBack}><IconLocate size="var(--icon-ui)" /></button>
+        <button type="button" className="icon-btn" disabled={(!runtimeId && !parentSessionPath) || loading || loadingEarlier} title={t('omp.workspace.refreshTranscript')} aria-label={t('omp.workspace.refreshTranscript')} onClick={() => { setHistoryMode(!runtimeId || savedOnly); setRevision(value => value + 1); }}><IconRefresh size="var(--icon-ui)" /></button>
       </div>
-      <h2 className="subagent-detail-title" title={subagent ? subagentTitle(subagent) : t('chat.subagentUnnamed')}>{subagent ? subagentTitle(subagent) : t('chat.subagentUnnamed')}</h2>
-      {subagent?.agent && <span className="subagent-detail-role lg-static lg-thin lg-capsule" title={subagent.agent}>{subagent.agent}</span>}
-      <div className="subagent-detail-meta">
-        <span className="subagent-detail-status" data-phase={phase}>{t(`omp.panel.phase.${phase}`)}</span>
-        {elapsed !== undefined && <span className="subagent-detail-elapsed" aria-label={t('omp.panel.elapsed', { value: elapsed })}>{elapsed}</span>}
-        {metricItems.length > 0 && <span className="subagent-detail-metrics">{metricItems.join(' · ')}</span>}
+      <div className="subagent-detail-meta" title={t('omp.roster.historyMetricsScope')}>
+        <span className="subagent-detail-status" data-phase={phase}><AgentStatus phase={phase} live={live} /><SubagentStatusText agent={subagent ?? { id: subagentId }} issueCount={outcome.issueCount} /></span>
+      {subagent && evidenceOf(subagent).observation === 'inferred' && <span className="subagent-inferred-tag" title={t('omp.subagent.inferredHint')}>{t('omp.subagent.inferred')}</span>}
+        {duration !== undefined && duration >= 1000 && <span className="subagent-detail-elapsed" aria-label={t('omp.panel.elapsed', { value: elapsed })}><AnimatedNumber animate={live} value={duration} format={n => formatElapsed(n, durationStyle, i18n.language)} /></span>}
+        <span className="subagent-detail-metrics">{modelMessage && <span>{modelDisplayName(text(modelMessage.raw.provider), text(modelMessage.raw.model))}</span>}{metrics.toolCount !== undefined && metrics.toolCount > 0 && <AnimatedNumber animate={live} value={metrics.toolCount} format={n => t('omp.roster.steps', { count: n })} />}{metrics.tokens !== undefined && metrics.tokens > 0 && <AnimatedNumber animate={live} value={metrics.tokens} format={n => t(before || pageBefore.current ? 'omp.roster.loadedTokens' : 'omp.roster.totalTokens', { value: formatSubagentTokens(n) })} />}{metrics.cost !== undefined && metrics.cost > 0 && <AnimatedNumber animate={live} value={metrics.cost} format={formatSubagentCost} />}</span>
       </div>
-      {taskError || phase === 'failed' || phase === 'aborted' ? <div className="subagent-detail-error" data-phase={phase} role="alert">{taskError?.split('\n')[0] || t(`omp.subagent.stage.reason.${phase}`)}</div> : activity && <ActivityLine key={subagentId} className="subagent-detail-activity" text={activity} />}
+      <details className="subagent-detail-brief" data-message-id={assignmentRowId}><summary>{t('omp.roster.assignment')}{fullAssignment && <> · {subagentPreview(assignment || fullAssignment, 1)}</>}</summary>{fullAssignment && <div className="subagent-assignment">{assignmentRow?.raw.historyResourceDeferred === true ? <DeferredContent reference={assignmentRow.resourceReference} onOpen={onOpenSessionResource} /> : renderProse(fullAssignment)}</div>}<details className="subagent-detail-metadata"><summary>{t('tools.technicalDetails')}</summary><code className="selectable">{subagentId}</code>{sourceTitle && <p>{sourceTitle}</p>}{historyMode && <p>{t('omp.subagent.savedConversation')}</p>}{sourceNotes.map(diagnostic => <p key={diagnostic}>{diagnostic}</p>)}{liveSequence.uncertain && <p>{t('omp.subagent.liveIdentityProvisional')}</p>}{sourceReference && <ResourceButton reference={sourceReference} onOpen={onOpenSessionResource} />}<pre className="selectable">{JSON.stringify(subagent, null, 2)}</pre>{instructionRows.map(row => <div key={row.id}>{row.raw.historyResourceDeferred === true ? <DeferredContent reference={row.resourceReference} onOpen={onOpenSessionResource} /> : <><pre className="selectable">{JSON.stringify(row.raw, null, 2)}</pre>{row.resourceReference && <ResourceButton reference={row.resourceReference} onOpen={onOpenSessionResource} />}</>}</div>)}</details></details>
+      {activity && <span className="subagent-detail-activity">{activity}</span>}
     </header>
-    <div ref={scrollRef} className="subagent-transcript-scroll" style={{ overflowAnchor: 'none' }} role="log" aria-live="off" aria-label={t('omp.workspace.subagentTranscript')} tabIndex={0} onWheel={beginReading} onTouchMove={beginReading} onKeyDown={event => { if (['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '].includes(event.key) && event.target === event.currentTarget) beginReading(); }} onPointerDown={event => { if (event.target === event.currentTarget) beginReading(); }} onScroll={() => {
-      const node = scrollRef.current;
-      if (!node || !visible || !node.clientHeight) return;
-      if (userScrolling.current) {
-        clearTimeout(scrollIdle.current);
-        scrollIdle.current = window.setTimeout(() => { userScrolling.current = false; captureReadingAnchors(); }, 180);
-        reading.current.follow = node.scrollHeight - node.scrollTop - node.clientHeight < 64; setShowJump(!reading.current.follow);
-        if (reading.current.follow) reading.current.anchors = undefined; else captureReadingAnchors();
-      }
-      reading.current.top = node.scrollTop;
-    }}><div ref={contentRef} className="subagent-transcript-list" onClickCapture={event => {
-      const summary = event.target instanceof Element ? event.target.closest('summary') : null;
-      if (summary instanceof HTMLElement && scrollRef.current) { disclosureAnchor.current = { element: summary, top: summary.getBoundingClientRect().top - scrollRef.current.getBoundingClientRect().top }; userScrolling.current = false; reading.current.follow = false; captureReadingAnchors(); setShowJump(true); }
-    }}>
-      <DisclosureAnchor.Provider value={holdDisclosure}>
-      <Disclosure className="tool-row subagent-detail-metadata" title={<span className="tool-row-name">{t('omp.subagent.metadata')}</span>}><code className="selectable">{subagentId}</code></Disclosure>
-      {historyMode && <div className="subagent-detail-notice">{t('omp.subagent.savedConversation')}</div>}
-      {visibleDiagnostics.map(diagnostic => <div key={diagnostic} className="subagent-detail-notice" role="status">{diagnostic}</div>)}
-      {(sourceNotes.length > 0 || sourceReference) && <Disclosure className="tool-row subagent-detail-metadata" title={<span className="tool-row-name">{t('omp.subagent.recordDetails')}</span>}>{sourceNotes.map(diagnostic => <p key={diagnostic} className="subagent-detail-notice">{diagnostic}</p>)}{sourceReference && <div className="message-attachments"><ResourceButton reference={sourceReference} onOpen={onOpenSessionResource} /></div>}</Disclosure>}
-      {before && <button type="button" className="btn" disabled={loadingEarlier || loading} onClick={() => void loadEarlier()}>{t(loadingEarlier ? 'omp.workspace.loadingTranscript' : 'omp.subagent.loadEarlier')}</button>}
-      {assignment && !firstUserId && <div className="message-row user"><div className="message-col"><div className="message-bubble"><div className="message-user-text selectable">{assignment}</div></div></div></div>}
-      {taskError && <div className="subagent-detail-notice" role="alert">{taskError}</div>}
-      {error && <div className="subagent-detail-notice" role="alert">{t('omp.subagent.transcriptUnavailable')} {error}</div>}
-      {!runtimeId && !parentSessionPath ? <div className="subagent-detail-notice">{t('omp.subagent.historyUnavailable')}</div> : loading ? <div className="subagent-detail-notice" role="status">{t('omp.workspace.loadingTranscript')}</div> : !error && !messages.length && <div className="subagent-detail-notice">{t('omp.workspace.noTranscriptEntries')}</div>}
-      {instructionRows.length > 0 && <Disclosure className="tool-row subagent-detail-metadata" title={<span className="tool-row-name">{t('omp.subagent.nativeInstructions', { count: instructionRows.length })}</span>}>{instructionRows.map(row => <div key={row.id}>{row.raw.historyResourceDeferred === true ? <DeferredContent reference={row.resourceReference} onOpen={onOpenSessionResource} /> : <><pre className="selectable">{JSON.stringify(row.raw, null, 2)}</pre>{row.resourceReference && <ResourceButton reference={row.resourceReference} onOpen={onOpenSessionResource} />}</>}</div>)}</Disclosure>}
-      {instructionRows.filter(row => typeof row.raw.errorMessage === 'string' && row.raw.errorMessage).map(row => <div key={row.id} data-message-id={row.id} className="subagent-detail-notice" role="alert">{String(row.raw.errorMessage)}</div>)}
-      {conversationRows.map(row => {
-        const message = row.raw;
-        const deferred = message.historyResourceDeferred === true;
-        if (message.role === 'toolResult') {
-          const projected = projectedTools.get(text(message.toolCallId));
-          // The shared projection places matched output at its call; retain the saved row anchor.
-          if (projected && projected.row.id !== row.id) return <div key={row.id} data-message-id={row.id} />;
-          const tool = projected?.tool ?? { id: text(message.toolCallId) || row.id, name: text(message.toolName) || t('omp.workspace.toolCall'), result: message, status: message.isError === true ? 'error' as const : 'complete' as const };
-          return <div key={row.id} data-message-id={row.id}>{renderTool(tool, row.id)}</div>;
-        }
-        const content = deferred ? <DeferredContent reference={row.resourceReference} onOpen={onOpenSessionResource} /> : message.role === 'custom' && message.customType === 'async-result' ? <NativeTaskActivity raw={message} cwd={cwd} onOpenFile={onOpenFile} onOpenSessionResource={onOpenSessionResource} /> : row.id === firstUserId && message.attribution === 'agent' && assignment ? renderProse(assignment) : renderContent(row);
-        const savedContent = !deferred && (row.resourceReference ? <div className="message-actions"><ResourceButton reference={row.resourceReference} onOpen={onOpenSessionResource} /></div> : row.id === firstUserId && message.attribution === 'agent' && assignment ? <Disclosure className="tool-row subagent-detail-metadata" title={<span className="tool-row-name">{t('omp.chat.nativeDetails')}</span>}><pre className="selectable">{JSON.stringify(message, null, 2)}</pre></Disclosure> : null);
-        return <div key={row.id} data-message-id={row.id}><div className={`message-row ${message.role === 'user' ? 'user' : 'assistant'}`}><div className="message-col"><div className="message-bubble">{content}{typeof message.errorMessage === 'string' && <div className="subagent-detail-notice" role="alert">{message.errorMessage}</div>}</div>{savedContent}</div></div></div>;
-      })}
-      {!messages.length && typeof subagent?.output === 'string' && renderProse(subagent.output)}
-      </DisclosureAnchor.Provider>
+    {error instanceof UserFacingError && <UserErrorNotice error={error} />}
+    {visibleDiagnostics.length > 0 && <TranscriptDisclosureProvider key={`diagnostics:${readingKey}`}><Disclosure className="subagent-diagnostics" title={<span>{t('omp.outcome.diagnostics', { count: visibleDiagnostics.length })}</span>}>{visibleDiagnostics.map(diagnostic => <pre key={diagnostic} className="selectable">{diagnostic}</pre>)}</Disclosure></TranscriptDisclosureProvider>}
+    <div ref={scrollRef} className="subagent-transcript-scroll" style={{ overflowAnchor: 'none' }} role="log" aria-live="off" aria-label={t('omp.workspace.subagentTranscript')} tabIndex={0}
+      onWheel={event => { if (event.deltaY && scrollGestureReachesViewport(event.currentTarget, event.target, event.deltaY)) beginReading(); }}
+      onTouchStart={event => { touchY.current = event.touches[0]?.clientY; }}
+      onTouchMove={event => { const y = event.touches[0]?.clientY; const delta = y !== undefined && touchY.current !== undefined ? touchY.current - y : 0; touchY.current = y; if (delta && scrollGestureReachesViewport(event.currentTarget, event.target, delta)) beginReading(); }}
+      onKeyDown={event => { const direction = scrollKeyDirection(event, event.target); if (direction && scrollGestureReachesViewport(event.currentTarget, event.target, direction)) beginReading(); }}
+      onPointerDown={event => { if (event.target === event.currentTarget) { scrollbarDragging.current = true; beginReading(); } }}
+      onScroll={event => { if (event.target === event.currentTarget && visible) { const nativeInput = explicitScrollInput.current && !isProgrammaticScroll(event.currentTarget); acceptNativeMovement(); latestSync.current(); if (nativeInput) scheduleReadingIdle(); } }}>
+      <div ref={contentRef} className="subagent-transcript-list" onPointerDownCapture={event => { const node = scrollRef.current; if (node && scrollGestureReachesViewport(node, event.target, -1) && scrollGestureReachesViewport(node, event.target, 1)) protectReading(); }} onFocusCapture={event => { const node = scrollRef.current; if (node && scrollGestureReachesViewport(node, event.target, -1) && scrollGestureReachesViewport(node, event.target, 1)) protectReading(); }} onClickCapture={event => {
+        const summary = event.target instanceof Element ? event.target.closest('summary') : null;
+        if (summary instanceof HTMLElement) holdDisclosure(summary);
+      }}>
+    {pageBefore.current && <button type="button" className="subagent-detail-metadata" onClick={() => void revealReport()}>{t('omp.outcome.report')} <IconArrowDown size="var(--icon-meta)" /></button>}
+      <TranscriptDisclosureProvider key={readingKey}><DisclosureAnchor.Provider value={holdDisclosure}>
+      {outcome.toolFailureCount > 0 && <Disclosure className="subagent-detail-metadata" title={<span>{t('omp.subagent.toolFailures', { count: outcome.toolFailureCount })}</span>}><p>{t('omp.subagent.toolFailuresHint')}</p></Disclosure>}
+      {(before || loadingEarlier || error) && <HistoryPaging key={readingKey} scrollRef={scrollRef} cursor={before} busy={loadingEarlier || loading} error={error} load={loadEarlier} enabled={visible && !loading} />}
+      {subagent?.observationLost === true && <div className="subagent-detail-notice" role="status">{text(subagent.observationReason) || t('omp.subagent.runtimeStopped')}</div>}
+      {liveSequence.truncated > 0 && <div className="subagent-detail-notice" role="status">{t('omp.subagent.liveWindowTruncated')}</div>}
+      {childAgents.length > 0 && <SubagentStage agents={childAgents} observedLive={live} title={t('omp.panel.childTasks')} onOpen={openChild} onBeforeToggle={holdDisclosure} />}
+      {!runtimeId && !parentSessionPath ? <div className="subagent-detail-notice">{t('omp.subagent.historyUnavailable')}</div> : loading ? <div className="subagent-loading" role="status" aria-label={t('omp.workspace.loadingTranscript')}><span /><span /><span /></div> : !error && !messages.length && !fallbackReport && <div className="subagent-detail-notice">{t('omp.workspace.noTranscriptEntries')}</div>}
+      <PrependAnchor ref={prependAnchor} scrollRef={scrollRef} first={messages[0]?.id} enabled={visible && !reading.current.follow} onRestore={(_element, anchor) => {
+        const node = scrollRef.current; if (!node) return;
+        const canonical = viewportReadingAnchorHandoff(node, anchor);
+        reading.current.anchors = canonical ? [canonical] : []; textAnchors.current = [anchor];
+        reading.current.top = node.scrollTop; observedTop.current = node.scrollTop;
+      }}>
+      {entries.map((entry, index) => entry.kind === 'assistant-turn'
+        ? <AssistantTurn key={assistantTurnKey(entry)} entry={entry} sourceContext={reading.current.context} onOpenChanges={onOpenChanges} active={live && phase === 'running' && index === entries.length - 1} byToolCall={byToolCall} resolvedTrees={resolvedTrees} observedLive={live} onOpenSubagent={openChild} {...body} />
+        : entry.row.id === assignmentRowId ? null : <MessageRow key={entry.id} row={entry.row} agents={childAgents} onOpenSubagent={openChild} {...body} />)}
+      </PrependAnchor>
+      {fallbackReport && <div ref={reportRef} className="subagent-final-report" tabIndex={-1}>{renderProse(fallbackReport)}</div>}
+      </DisclosureAnchor.Provider></TranscriptDisclosureProvider>
     </div></div>
-    {showJump && <TooltipButton type="button" className="jump-latest-btn subagent-transcript-jump" tooltip={t('chat.scrollToBottom')} ariaLabel={t('chat.scrollToBottom')} onClick={() => { disclosureAnchor.current = null; reading.current.anchors = undefined; userScrolling.current = false; reading.current.follow = true; if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; setShowJump(false); }}><IconArrowDown size={14} /></TooltipButton>}
-    <footer className="subagent-transcript-composer"><p className="file-tree-note">{t('panel.subagentReadOnly')}</p></footer>
+    {showJump && <TooltipButton type="button" className="jump-latest-btn subagent-transcript-jump" tooltip={t('chat.scrollToBottom')} ariaLabel={t('chat.scrollToBottom')} onClick={() => { if (pageBefore.current) returnLatest(); else { navigationEpoch.current++; pendingReportReveal.current = false; prependAnchor.current?.cancel(); clearDisclosureAnchorReserve(contentRef.current); disclosureAnchor.current = null; reading.current.anchors = undefined; textAnchors.current = []; reading.current.follow = true; const node = scrollRef.current; if (node) { interruptTranscriptNavigation(node); node.scrollTop = node.scrollHeight; noteProgrammaticScroll(node); observedTop.current = node.scrollTop; reading.current.top = node.scrollTop; } setShowJump(false); } }}><IconArrowDown size="var(--icon-meta)" /></TooltipButton>}
   </div>;
 }
 
-function DetailAgentIdentity({ agent }: { agent: NativeSubagent }) {
-  const { t } = useTranslation();
-  const phase = subagentPhase(agent);
-  const connector = useMemo(() => crackPath(crackPoints([{ x: 0, y: 4 }, { x: 28, y: 4 }], `${agent.id}:breadcrumb`, { amplitude: 1.2 })), [agent.id]);
-  return <div className="subagent-detail-identity" data-phase={phase}>
-    <LiquidSpring size={14} active={phase === 'running'} />
-    <svg className="subagent-detail-channel" width="28" height="8" viewBox="0 0 28 8" aria-hidden="true"><LavaCrack d={connector} phase={phase} width={1.4} /></svg>
-    <span className="subagent-detail-breadcrumb" title={`${t('omp.panel.mainAgent')} / ${subagentTitle(agent)}`}>{t('omp.panel.mainAgent')} / {subagentTitle(agent)}</span>
-  </div>;
-}
+

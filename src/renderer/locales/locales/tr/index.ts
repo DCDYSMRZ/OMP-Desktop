@@ -136,7 +136,6 @@ export const tr = {
     devDisabled: "Geliştirme derlemelerinde güncellemeler kapalıdır.",
   },
   nav: {
-    "pinnedSessions": "Sabitlenmiş",
     home: "Ana sayfa",
     newTask: "Yeni görev",
     newProject: "Yeni proje",

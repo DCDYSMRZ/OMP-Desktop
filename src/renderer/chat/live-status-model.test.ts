@@ -1,0 +1,72 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import i18next from 'i18next';
+import { toolsMessages } from '../locales/messages/tools';
+import { timelineMessages } from '../locales/messages/timeline';
+import { deriveLiveStatus, advanceActiveClock, inlineLiveHeading, showFloatingLiveStatus } from './live-status-model';
+import type { ChatState, ChatMessage, ToolActivity } from './model';
+import type { AssistantTurnEntry } from './presentation';
+const i18n = i18next.createInstance();
+await i18n.init({ lng: 'zh-CN', resources: { 'zh-CN': { translation: { ...timelineMessages['zh-CN'], ...toolsMessages['zh-CN'] } } } });
+const state = (extra: Partial<ChatState> = {}) => ({ state: {}, prompts: [], isRunning: true, ...extra }) as ChatState;
+test('native retry state stays live-only and attention takes precedence', () => {
+ const chat = state({ state: { sessionId: 'retry', isStreaming: true, providerRetry: { errorMessage: 'HTTP 500', attempt: 1, maxAttempts: 10, delayMs: 2000 } } });
+ assert.equal(deriveLiveStatus(chat, undefined, true, true, i18n.t).label, '模型服务暂时不可用（500），2 秒后第 1/10 次重试');
+ chat.state.providerRetry = { errorMessage: 'connect ECONNREFUSED', attempt: 2 };
+ assert.equal(deriveLiveStatus(chat, undefined, true, true, i18n.t).label, '无法连接模型服务，正在重试');
+ chat.prompts = [{ type: 'extension_ui_request', id: 'ask', method: 'select', title: '选择界面' }];
+ const waiting = deriveLiveStatus(chat, undefined, true, true, i18n.t);
+ assert.equal(waiting.kind, 'attention');
+ assert.equal(waiting.label, '等待你的选择 · 选择界面');
+ assert.equal(waiting.paused, true);
+});
+test('idle following disappears and saved observations never claim to be live', () => {
+ assert.equal(deriveLiveStatus(state({ isRunning: false }), undefined, true, true, i18n.t).kind, 'hidden');
+ assert.equal(deriveLiveStatus(state({ isRunning: false }), undefined, false, true, i18n.t).kind, 'latest');
+ assert.equal(deriveLiveStatus(state(), undefined, true, false, i18n.t).kind, 'hidden');
+});
+test('the active clock excludes waiting time after resuming', () => {
+ let clock = { at: 0, elapsed: 0, paused: false };
+ clock = advanceActiveClock(clock, 12000, true);
+ clock = advanceActiveClock(clock, 40000, true);
+ assert.equal(clock.elapsed, 12000);
+ clock = advanceActiveClock(clock, 50000, false);
+ clock = advanceActiveClock(clock, 52000, false);
+ assert.equal(clock.elapsed, 14000);
+});
+test('partial tool arguments stay private and one step retains its announcement identity', () => {
+ const row: ChatMessage = { id: 'assistant', source: 'live', raw: { role: 'assistant', content: [] }, streaming: true };
+ const tool: ToolActivity = { id: 'read-call', name: 'read', status: 'pending', args: { path: '/work/par' } };
+ const entry: AssistantTurnEntry = { kind: 'assistant-turn', id: 'turn', rows: [row], parts: [{ kind: 'tool', key: tool.id, row, tool }] };
+ const pending = deriveLiveStatus(state(), entry, true, true, i18n.t);
+ tool.args = { path: '/work/partial-file.ts' };
+ const growing = deriveLiveStatus(state(), entry, true, true, i18n.t);
+ assert.equal(growing.label, pending.label);
+ assert.equal(growing.announcementReady, false);
+ tool.status = 'running';
+ const running = deriveLiveStatus(state(), entry, true, true, i18n.t);
+ assert.equal(running.announcementReady, true);
+ assert.match(running.label, /partial-file\.ts/);
+ tool.status = 'complete';
+ assert.equal(deriveLiveStatus(state(), entry, true, true, i18n.t).announcementKey, running.announcementKey);
+ tool.id = 'next-call';
+ assert.notEqual(deriveLiveStatus(state(), entry, true, true, i18n.t).announcementKey, running.announcementKey);
+});
+test('floating live state has exactly one visible home and never appears at idle', () => {
+ assert.equal(showFloatingLiveStatus(true, true), false);
+ assert.equal(showFloatingLiveStatus(true, false), true);
+ assert.equal(showFloatingLiveStatus(true, undefined), false);
+ assert.equal(showFloatingLiveStatus(false, false), false);
+});
+test('thinking-only inline state uses active time without a zero duration', () => {
+ const row: ChatMessage = { id: 'thinking', source: 'live', raw: { role: 'assistant', content: [] }, streaming: true };
+ const entry: AssistantTurnEntry = { kind: 'assistant-turn', id: 'turn', rows: [row], parts: [{ kind: 'thinking', key: 'thought', row, value: 'Considering the request' }] };
+ const status = deriveLiveStatus(state(), entry, true, true, i18n.t);
+ assert.equal(inlineLiveHeading(status, false, 0, '0秒', i18n.t), '正在思考');
+ assert.equal(inlineLiveHeading(status, false, 999, '0秒', i18n.t), '正在思考');
+ let clock = advanceActiveClock({ at: 0, elapsed: 0, paused: false }, 2000, true);
+ clock = advanceActiveClock(clock, 9000, false);
+ assert.equal(inlineLiveHeading(status, false, clock.elapsed, `${clock.elapsed / 1000}秒`, i18n.t), '正在思考 · 2秒');
+ const waiting = deriveLiveStatus(state({ prompts: [{ type: 'extension_ui_request', id: 'choice', method: 'select', title: 'Pick one' }] }), entry, true, true, i18n.t);
+ assert.equal(inlineLiveHeading(waiting, false, clock.elapsed, '2秒', i18n.t), '等待你的选择');
+});

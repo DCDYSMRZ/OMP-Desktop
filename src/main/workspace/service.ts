@@ -8,6 +8,8 @@ import type { Attachment, FileContent, FileEntry, FileSearchResult, PreparedProm
 
 const TEXT_LIMIT = 2 * 1024 * 1024;
 const IMAGE_LIMIT = 10 * 1024 * 1024;
+const PATCH_LIMIT = 4 * 1024 * 1024;
+const PATCH_LINE_LIMIT = 5000; // Matches the review renderer's line budget.
 const ATTACHMENT_TOTAL = 32 * 1024 * 1024;
 const ATTACHMENT_TTL = 30 * 60 * 1000;
 const MAX_ATTACHMENTS = 24;
@@ -44,6 +46,7 @@ interface Grant { attachment: Attachment; cwd: string; data: Buffer; text?: stri
 /** Workspace reads never inherit picker/drop or explicit clipboard-image attachment grants. */
 export class WorkspaceService {
   private readonly attachments = new Map<string, Grant>();
+  private readonly repositoryRoots = new Map<string, { expires: number; root: string | null }>();
   constructor() { setInterval(() => this.prune(), 60_000).unref(); }
 
   private prune(): void {
@@ -61,7 +64,7 @@ export class WorkspaceService {
     return resolved;
   }
 
-  private async readBounded(absolute: string, root?: string): Promise<{ data?: Buffer; size: number }> {
+  private async readBounded(absolute: string, root?: string, limit = IMAGE_LIMIT): Promise<{ data?: Buffer; size: number }> {
     const handle = await open(absolute, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
     try {
       const info = await handle.stat();
@@ -70,7 +73,7 @@ export class WorkspaceService {
       if (current !== absolute || (root && !contained(root, current))) throw new Error('File location changed during access');
       const currentInfo = await stat(current);
       if (currentInfo.dev !== info.dev || currentInfo.ino !== info.ino) throw new Error('File changed during access');
-      if (info.size > IMAGE_LIMIT) return { size: info.size };
+      if (info.size > limit) return { size: info.size };
       // Read at most the original size plus one byte, even if another process grows the file.
       const data = Buffer.alloc(info.size + 1);
       let bytes = 0;
@@ -246,7 +249,70 @@ export class WorkspaceService {
     }
   }
 
-  async gitDiff(cwd: string, requested?: string): Promise<WorkspaceDiff> {
+  private async untrackedPatch(root: string, name: string): Promise<string> {
+    // Build from the same bounded, no-follow read used for workspace previews.
+    // git --no-index would reopen the path after validation and could follow a
+    // replaced symlink; this snapshot never grants access outside the workspace.
+    const absolute = await this.resolvePath(root, name);
+    const { data } = await this.readBounded(absolute, root, PATCH_LIMIT);
+    if (!data) return 'Diff unavailable: file exceeds the 4 MiB patch limit.';
+    let text = textFor(data);
+    if (text === undefined) return `Binary files /dev/null and ${JSON.stringify(`b/${name}`)} differ\n`;
+    // TextDecoder removes a UTF-8 BOM; a review patch must preserve every byte.
+    if (data[0] === 0xef && data[1] === 0xbb && data[2] === 0xbf) text = `\ufeff${text}`;
+    let lineCount = text && !text.endsWith('\n') ? 1 : 0;
+    for (let index = 0; index < text.length; index++) if (text[index] === '\n' && ++lineCount > PATCH_LINE_LIMIT) break;
+    if (lineCount > PATCH_LINE_LIMIT) return 'Diff unavailable: file exceeds the 5,000-line preview limit.';
+    const lines = text.split('\n');
+    if (!text || text.endsWith('\n')) lines.pop();
+    // Quote control characters so a filename cannot inject patch metadata.
+    const oldPath = JSON.stringify(`a/${name}`);
+    const newPath = JSON.stringify(`b/${name}`);
+    const header = `diff --git ${oldPath} ${newPath}\nnew file mode 100644\n--- /dev/null\n+++ ${newPath}\n`;
+    const patch = lines.length ? `${header}@@ -0,0 +1,${lines.length} @@\n${lines.map(line => `+${line}`).join('\n')}\n${text.endsWith('\n') ? '' : '\\ No newline at end of file\n'}` : header;
+    return Buffer.byteLength(patch, 'utf8') > PATCH_LIMIT ? 'Diff unavailable: file exceeds the 4 MiB patch limit.' : patch;
+  }
+
+
+  async gitDiff(cwd: string, requested?: string, referencedPaths?: string[], metadataOnly = false): Promise<WorkspaceDiff> {
+    if (referencedPaths !== undefined) {
+      if (referencedPaths.length > 500) throw new Error('At most 500 referenced paths may be reviewed');
+      const workspace = await realpath(cwd), roots = new Set<string>(), unversionedPaths: string[] = [];
+      for (const reference of requested === undefined ? ['', ...new Set(referencedPaths)] : [requested]) {
+        validatePath(reference);
+        const candidate = path.resolve(workspace, reference);
+        if (!contained(workspace, candidate)) { if (reference) unversionedPaths.push(reference); continue; }
+        let directory = candidate;
+        while (true) {
+          try { const resolved = await this.resolvePath(workspace, directory); directory = (await stat(resolved)).isDirectory() ? resolved : path.dirname(resolved); break; }
+          catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; const parent = path.dirname(directory); if (parent === directory) throw error; directory = parent; }
+        }
+        const cached = this.repositoryRoots.get(directory);
+        let repo = cached && cached.expires > Date.now() ? cached.root : undefined;
+        if (repo === undefined) {
+          try { repo = (await this.git(directory, ['rev-parse', '--show-toplevel'])).trim(); }
+          catch (error) { if (!(error instanceof Error) || !/not a git repository/i.test(error.message)) throw error; repo = null; }
+          if (this.repositoryRoots.size >= 512) this.repositoryRoots.delete(this.repositoryRoots.keys().next().value!);
+          this.repositoryRoots.set(directory, { root: repo, expires: Date.now() + 30000 });
+        }
+        // A parent repository is reviewed only within the approved workspace.
+        if (repo) roots.add(contained(workspace, repo) ? repo : workspace);
+        else if (reference) unversionedPaths.push(reference);
+        if (roots.size > 32) throw new Error('More than 32 repositories; narrow the referenced files');
+      }
+      const files: WorkspaceDiff['files'] = []; let bytes = 0;
+      for (const repo of roots) {
+        const target = requested === undefined ? undefined : path.relative(repo, path.resolve(workspace, requested));
+        if (target !== undefined && !contained(repo, path.resolve(repo, target))) continue;
+        const result = await this.gitDiff(repo, target, undefined, requested === undefined);
+        for (const file of result.files) {
+          bytes += Buffer.byteLength(file.patch);
+          if (files.length >= MAX_ENTRIES || bytes > PATCH_LIMIT) throw new Error('Combined repository changes exceed the review limit; select a file');
+          files.push({ ...file, path: path.relative(workspace, path.join(repo, file.path)), repo });
+        }
+      }
+      return { available: roots.size > 0, repositories: [...roots], unversionedPaths, files };
+    }
     const root = await realpath(cwd);
     try {
       if ((await this.git(root, ['rev-parse', '--is-inside-work-tree'])).trim() !== 'true') return { available: false, reason: 'This directory is not a Git working tree', files: [] };
@@ -277,19 +343,29 @@ export class WorkspaceService {
     for (const staged of [false, true]) {
       const stage = staged ? ['--cached'] : [];
       const names = (await this.git(root, ['diff', ...stage, '--relative', '--no-ext-diff', '--no-textconv', '--no-renames', '--name-status', '-z', '--', ...(filters.length ? filters : ['.'])])).split('\0');
+      const statistics = new Map<string, { added?: number; removed?: number }>();
+      if (metadataOnly) for (const row of (await this.git(root, ['diff', ...stage, '--relative', '--no-ext-diff', '--no-textconv', '--no-renames', '--numstat', '-z', '--', '.'])).split('\0')) {
+        const match = /^(\d+|-)\t(\d+|-)\t([\s\S]+)$/.exec(row);
+        if (match) statistics.set(match[3], match[1] === '-' ? {} : { added: Number(match[1]), removed: Number(match[2]) });
+      }
       for (let index = 0; index + 1 < names.length; index += 2) {
         const status = names[index]; const name = names[index + 1];
         if (!status || !name) continue;
-        if (files.length >= 200) throw new Error('More than 200 changed files; select an individual file');
-        const patch = await this.git(root, ['diff', ...stage, '--relative', '--no-ext-diff', '--no-textconv', '--no-renames', '--no-color', '--', name]);
+        if (files.length >= (metadataOnly ? MAX_ENTRIES : 200)) throw new Error('Too many changed files; select an individual file');
+        const patch = metadataOnly ? '' : await this.git(root, ['diff', ...stage, '--relative', '--no-ext-diff', '--no-textconv', '--no-renames', '--no-color', '--', name]);
         patchBytes += Buffer.byteLength(patch, 'utf8');
         if (patchBytes > 4 * 1024 * 1024) throw new Error('Combined Git diff exceeds 4 MiB; select an individual file');
-        files.push({ path: name, status: `${staged ? 'staged' : 'unstaged'} ${status}`, patch });
+        files.push({ path: name, status: `${staged ? 'staged' : 'unstaged'} ${status}`, patch, ...(metadataOnly ? { patchDeferred: true, ...statistics.get(name) } : {}) });
       }
     }
     const untracked = (await this.git(root, ['ls-files', '--others', '--exclude-standard', '-z', '--', ...(filters.length ? filters : ['.'])])).split('\0').filter(Boolean);
-    if (files.length + untracked.length > 200) throw new Error('More than 200 changed files; select an individual file');
-    for (const name of untracked) files.push({ path: name, status: 'untracked ?', patch: 'Untracked file: not part of the Git index. Open the file to inspect its contents.' });
+    if (files.length + untracked.length > (metadataOnly ? MAX_ENTRIES : 200)) throw new Error('Too many changed files; select an individual file');
+    for (const name of untracked) {
+      const patch = metadataOnly ? '' : await this.untrackedPatch(root, name);
+      patchBytes += Buffer.byteLength(patch, 'utf8');
+      if (patchBytes > PATCH_LIMIT) throw new Error('Combined Git diff exceeds 4 MiB; select an individual file');
+      files.push({ path: name, status: 'untracked ?', patch, ...(metadataOnly ? { patchDeferred: true } : {}) });
+    }
     return { available: true, files };
   }
 }

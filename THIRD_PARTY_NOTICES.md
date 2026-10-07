@@ -30,7 +30,7 @@
 | `components/workpanel/WorkPanel.tsx` | `src/renderer/workspace/WorkPanel.tsx` | 面板 tabs、调整宽度与最大化；删除插件视图 |
 | `components/workpanel/FilesTab.tsx` | `src/renderer/workspace/FilesTab.tsx` | 只读工作区文件浏览/预览 |
 | `components/workpanel/SubagentTranscriptTab.tsx` | `src/renderer/workspace/SubagentTranscriptTab.tsx` | 使用原生 subagent transcript 与字节游标 |
-| `components/ReviewChangeCard.tsx` | `src/renderer/workspace/ReviewChangeCard.tsx` | 保留 diff 卡片 DOM，使用当前 Git 差异，不使用 PI 回滚快照 |
+| `components/ReviewChangeCard.tsx` | `src/renderer/workspace/ReviewChangeCard.tsx` | 保留 diff 卡片 DOM，呈现本轮最终净差异及独立的当前 Git 工作区差异，不使用 PI 回滚快照 |
 | `PI-Desktop-main/apps/desktop/electron.vite.config.ts` | `electron.vite.config.ts` | 主进程/沙箱 preload CJS 构建入口结构 |
 | `components/ChatSurface.tsx`、`ConversationWidthHandles.tsx` | `src/renderer/chat/ChatView.tsx` | 首页/会话展示和内容宽度控制 |
 | `components/Composer.tsx`、`features/chat/composer/{ComposerInput,ComposerToolbar}.tsx` | `src/renderer/chat/Composer.tsx` | 保留 contenteditable/IME、输入与工具栏结构；绑定原生发送/队列 |

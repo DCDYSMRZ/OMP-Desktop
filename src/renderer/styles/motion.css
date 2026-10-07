@@ -1,0 +1,145 @@
+/*
+  Shared motion primitives. Only transform/opacity animate, except Collapse's
+  grid track. Reduced motion settles every surface immediately.
+*/
+
+/* Height/opacity disclosure. Pair with <Collapse>, which adds [hidden] only
+   after the close transition so reading anchors never measure a stale body. */
+.ui-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows var(--motion-duration-expand) var(--motion-ease-emphasized),
+    opacity var(--motion-duration-fast) var(--motion-ease-out);
+}
+.ui-collapse.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.ui-collapse[hidden] {
+  display: none;
+}
+.ui-collapse > .ui-collapse-inner {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+.ui-collapse.is-open.is-settled > .ui-collapse-inner {
+  overflow: visible;
+}
+
+/* A newly mounted row/step settles in from slightly below. */
+.ui-enter {
+  animation: ui-enter var(--motion-duration-enter) var(--motion-ease-out) both;
+}
+@keyframes ui-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+/* A live group owns its entrance; nested rows must not move twice. */
+.ui-enter .ui-enter { animation: none; }
+.ui-collapse:not(.is-settled) .ui-enter { animation: none; }
+
+/* Replacing live text (current activity ticker). Key the element by its text. */
+.ui-ticker {
+  animation: ui-ticker var(--motion-duration-normal) var(--motion-ease-out) both;
+}
+@keyframes ui-ticker {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Live status mark: a steady dot with a soft expanding halo. */
+.ui-live-dot {
+  position: relative;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: var(--radius-round);
+  background: currentColor;
+}
+.ui-live-dot::after {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: currentColor;
+  content: "";
+  animation: ui-halo calc(var(--motion-duration-expand) * 6) var(--motion-ease-standard) infinite;
+}
+@keyframes ui-halo {
+  0% { opacity: 0.55; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.6); }
+}
+
+/* Small indeterminate spinner (ring). */
+.ui-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  flex: none;
+  border: 1.5px solid color-mix(in oklab, currentColor 22%, transparent);
+  border-top-color: currentColor;
+  border-radius: var(--radius-round);
+  animation: ui-spin calc(var(--motion-duration-expand) * 4) var(--motion-ease-standard) infinite;
+}
+@keyframes ui-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* The live dot carries activity; keep its label still and readable. */
+.ui-shimmer { color: inherit; }
+
+/* Three staggered dots ("working"). */
+.ui-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.ui-dots > span {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-round);
+  background: currentColor;
+  opacity: 0.35;
+  animation: ui-dot calc(var(--motion-duration-expand) * 6) var(--motion-ease-standard) infinite;
+}
+.ui-dots > span:nth-child(2) { animation-delay: var(--motion-duration-fast); }
+.ui-dots > span:nth-child(3) { animation-delay: var(--motion-duration-expand); }
+@keyframes ui-dot {
+  0%, 60%, 100% { opacity: 0.35; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1); }
+}
+
+/* Brief attention flash when navigation lands on an element. */
+.ui-flash {
+  animation: ui-flash var(--motion-duration-expand) var(--motion-ease-standard) both;
+}
+@keyframes ui-flash {
+  from { opacity: 0.65; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ui-collapse { transition: none; }
+  .ui-enter,
+  .ui-ticker,
+  .ui-flash { animation: none; }
+  .ui-live-dot::after { animation: none; opacity: 0; }
+  .ui-spinner { animation: none; }
+  .ui-shimmer { animation: none; -webkit-text-fill-color: currentColor; background: none; }
+  .ui-dots > span { animation: none; opacity: 0.7; }
+  [class*="chevron"], [class*="caret"], .settings-config-sync-progress-bar-fill { transition: none !important; }
+}
+
+.motion-swap { display: inline-grid; position: relative; vertical-align: baseline; }
+.motion-swap-current, .motion-swap-out { grid-area: 1 / 1; min-width: 0; }
+.motion-swap-out { position: absolute; inset: 0; pointer-events: none; animation: motion-swap-out var(--motion-duration-fast) var(--ease-exit) both; }
+.motion-number { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.motion-number-digit { width: 1ch; text-align: center; }
+.motion-number-literal { display: inline; }
+@keyframes motion-swap-out { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .motion-swap-out { animation-duration: var(--motion-duration-reduced); } }
+
+.motion-managed.motion-managed { animation: none !important; }

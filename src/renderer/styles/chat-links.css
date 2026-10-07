@@ -80,7 +80,7 @@
   gap: 6px;
   padding: 4px 10px;
   font: inherit;
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
   color: var(--ds-text-primary);
   background: var(--ds-tile);
   border-radius: var(--radius-sm);

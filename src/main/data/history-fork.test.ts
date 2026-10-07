@@ -4,7 +4,7 @@ import { chmod, cp, lstat, mkdir, mkdtemp, open, readFile, realpath, rename, rm,
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { stageArchiveFork, type ArchiveForkSource } from './history-fork';
+import { preflightArchiveFork, stageArchiveFork, type ArchiveForkSource } from './history-fork';
 import { HistorySource, sourceRevision } from './history-source';
 
 const jsonl = (...rows: unknown[]) => `${rows.map(row => JSON.stringify(row)).join('\n')}\n`;
@@ -122,6 +122,19 @@ test('escaping source symlinks and oversized sparse artifacts are rejected befor
     await assert.rejects(stageArchiveFork(source, artifacts, sourceId), /512 MiB artifact staging limit/);
     assert.equal((await stat(join(artifacts, 'huge'))).size, 512 * 1024 * 1024 + 1);
     assert.deepEqual(await readFile(path), original);
+  }));
+  await t.test('preflight byte bound', async () => fixture(async ({ artifacts, source, path, original }) => {
+    const file = await open(join(artifacts, 'huge'), 'wx');
+    try { await file.truncate(512 * 1024 * 1024 + 1); } finally { await file.close(); }
+    await assert.rejects(preflightArchiveFork(source, artifacts), /512 MiB artifact staging limit/);
+    assert.deepEqual(await readFile(path), original);
+  }));
+  await t.test('preflight symlink', async () => fixture(async ({ root, artifacts, source }) => {
+    const outside = join(root, 'outside');
+    await writeFile(outside, 'PRIVATE');
+    await symlink(outside, join(artifacts, 'escape'));
+    await assert.rejects(preflightArchiveFork(source, artifacts), /symbolic link/);
+    assert.equal(await readFile(outside, 'utf8'), 'PRIVATE');
   }));
 });
 

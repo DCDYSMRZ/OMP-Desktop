@@ -1,14 +1,17 @@
 import { mkdir, open, realpath, rename, stat, unlink } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { isAbsolute, join } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import type { DesktopPreferences } from '../../shared/contracts';
 import { isMissing, readSmallFile, record } from './io';
 
 const MAX_BYTES = 128 * 1024;
 export const DEFAULT_PREFERENCES: DesktopPreferences = {
-  theme: 'system', language: 'zh-CN', fontSize: 14, fontFamily: '', sidebarWidth: 260,
-  panelWidth: 480, chatContentWidth: 760, executablePath: '', profile: '', lastWorkspace: '', recentWorkspaces: [],
-  pinnedSessions: [], enterToSend: true,
+  language: 'zh-CN', fontSize: 14, fontFamily: '', sidebarWidth: 260,
+  panelWidth: 420, chatContentWidth: 760, executablePath: '', profile: '', lastWorkspace: '', recentWorkspaces: [],
+  pinnedSessions: [], enterToSend: true, notifications: true, terminalPresence: true,
+  preferredEditor: 'system',
+  messageMeta: 'always', durationStyle: 'units',
+  hiddenProjects: [], collapsedProjects: {}, sidebarStateMigrated: true,
 };
 
 export function normalizeProfile(value: string | undefined): string | undefined {
@@ -29,9 +32,14 @@ export function validatePreferences(value: unknown): Partial<DesktopPreferences>
   for (const [key, item] of Object.entries(value)) {
     let valid = false;
     switch (key) {
-      case 'theme': valid = item === 'system' || item === 'light' || item === 'dark'; break;
       case 'language': valid = item === 'zh-CN' || item === 'en'; break;
-      case 'enterToSend': valid = typeof item === 'boolean'; break;
+      case 'preferredEditor': valid = item === 'system' || item === 'vscode' || item === 'cursor' || item === 'zed'; break;
+      case 'messageMeta': valid = item === 'always' || item === 'hover'; break;
+      case 'durationStyle': valid = item === 'units' || item === 'clock'; break;
+      case 'terminalPresence': case 'notifications': case 'enterToSend': valid = typeof item === 'boolean'; break;
+      case 'sidebarStateMigrated': valid = typeof item === 'boolean'; break;
+      case 'hiddenProjects': valid = Array.isArray(item) && item.length <= 200 && item.every(path => validPath(path, false)) && new Set(item).size === item.length; break;
+      case 'collapsedProjects': valid = record(item) && Object.keys(item).length <= 200 && Object.entries(item).every(([path, collapsed]) => validPath(path, false) && typeof collapsed === 'boolean'); break;
       case 'fontSize': valid = typeof item === 'number' && Number.isInteger(item) && item >= 10 && item <= 32; break;
       case 'sidebarWidth': valid = typeof item === 'number' && Number.isFinite(item) && item >= 180 && item <= 600; break;
       case 'panelWidth': valid = typeof item === 'number' && Number.isFinite(item) && item >= 1 && item <= Number.MAX_SAFE_INTEGER; break;
@@ -54,9 +62,9 @@ export function validatePreferences(value: unknown): Partial<DesktopPreferences>
 
 async function canonicalWorkspaces(preferences: DesktopPreferences): Promise<DesktopPreferences> {
   const identities = new Map<string, string>();
-  for (const path of [preferences.lastWorkspace, ...preferences.recentWorkspaces]) {
+  for (const path of [preferences.lastWorkspace, ...preferences.recentWorkspaces, ...preferences.hiddenProjects, ...Object.keys(preferences.collapsedProjects)]) {
     if (!path || identities.has(path)) continue;
-    let identity = path;
+    let identity = resolve(path);
     try {
       const canonical = await realpath(path);
       if ((await stat(canonical)).isDirectory()) {
@@ -70,7 +78,7 @@ async function canonicalWorkspaces(preferences: DesktopPreferences): Promise<Des
     }
     identities.set(path, identity);
   }
-  return { ...preferences, lastWorkspace: identities.get(preferences.lastWorkspace) ?? preferences.lastWorkspace, recentWorkspaces: [...new Set(preferences.recentWorkspaces.map(path => identities.get(path) ?? path))] };
+  return { ...preferences, lastWorkspace: identities.get(preferences.lastWorkspace) ?? preferences.lastWorkspace, recentWorkspaces: [...new Set(preferences.recentWorkspaces.map(path => identities.get(path) ?? path))], hiddenProjects: [...new Set(preferences.hiddenProjects.map(path => identities.get(path) ?? path))], collapsedProjects: Object.fromEntries(Object.entries(preferences.collapsedProjects).map(([path, collapsed]) => [identities.get(path) ?? path, collapsed])) };
 }
 
 export class PreferenceStore {
@@ -84,7 +92,17 @@ export class PreferenceStore {
     if (text !== undefined) {
       try { parsed = JSON.parse(text); } catch { throw new Error(`Invalid desktop preferences JSON: ${this.path}`); }
     }
-    return { ...DEFAULT_PREFERENCES, recentWorkspaces: [], pinnedSessions: [], ...validatePreferences(parsed) };
+    // Retired desktop appearance keys are ignored only when reading stored data.
+    // Public patches still pass through the strict validator unchanged.
+    if (record(parsed)) {
+      delete parsed.theme;
+      delete parsed.motionMode;
+      if (parsed.sidebarStateMigrated === undefined) {
+        const legacy = await stat(join(this.directory, 'Local Storage', 'leveldb', 'CURRENT')).then(() => true, error => { if (isMissing(error)) return false; throw error; });
+        parsed.sidebarStateMigrated = !legacy;
+      }
+    }
+    return { ...DEFAULT_PREFERENCES, recentWorkspaces: [], pinnedSessions: [], hiddenProjects: [], collapsedProjects: {}, ...validatePreferences(parsed) };
   }
 
   async get(): Promise<DesktopPreferences> {

@@ -1,0 +1,7 @@
+.native-literal-text { white-space: pre-wrap; overflow-wrap: anywhere; user-select: text; font-family: var(--font-mono); font-size: var(--text-code); line-height: var(--leading-code); color: var(--tl-ink); }
+.native-semantic-card { min-width: 0; margin: 8px 0; }
+.native-semantic-result { min-width: 0; flex: 1; }
+.native-semantic-details { margin-top: 6px; }
+.native-semantic-card .message-meta, .native-semantic-result .message-meta { overflow-wrap: anywhere; }
+.native-semantic-card .chat-file-chip { max-width: 100%; overflow-wrap: anywhere; white-space: normal; }
+.native-semantic-card pre, .native-semantic-result pre { max-width: 100%; overflow: auto; }

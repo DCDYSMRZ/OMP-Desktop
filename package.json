@@ -5,6 +5,14 @@
   "description": "Desktop frontend for the locally installed oh-my-pi runtime",
   "license": "LGPL-3.0-only",
   "author": "OMP-Desktop contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DCDYSMRZ/OMP-Desktop.git"
+  },
+  "homepage": "https://github.com/DCDYSMRZ/OMP-Desktop#readme",
+  "bugs": {
+    "url": "https://github.com/DCDYSMRZ/OMP-Desktop/issues"
+  },
   "type": "module",
   "main": "./out/main/index.js",
   "packageManager": "pnpm@10.34.5",
@@ -16,7 +24,9 @@
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "test": "tsx --test 'src/**/*.test.ts'",
-    "pack": "pnpm build && electron-builder --dir --publish never"
+    "e2e": "bun e2e/run.mjs",
+    "pack": "pnpm build && electron-builder --dir --publish never",
+    "dist:mac": "pnpm build && electron-builder --mac dmg --arm64 --publish never"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
@@ -49,6 +59,7 @@
     "typescript": "^5.9.3",
     "unified": "^11.0.5",
     "vite": "^7.3.6",
+    "yaml": "2.9.1",
     "zustand": "^5.0.15"
   }
 }

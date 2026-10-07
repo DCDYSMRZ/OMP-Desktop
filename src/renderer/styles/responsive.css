@@ -18,41 +18,22 @@
   }
 }
 
-/* Keep both model and thinking visible; wrap recovery controls before
-   sacrificing their explanation or the send/stop hit targets. */
-.composer-left,
-.composer-right {
-  min-width: 0;
+/* Mandatory actions stay reachable; the label-sized picker may shrink or wrap. */
+.composer-left, .composer-right, .composer-model-thinking { min-width: 0; }
+.composer-toolbar .composer-left { flex: 0 0 auto; }
+.composer-toolbar .composer-model-thinking { flex: 0 1 auto; min-width: 0; }
+.composer-toolbar .composer-right { flex: 0 0 auto; justify-content: flex-end; flex-wrap: nowrap; }
+.composer-model-thinking-model { flex: 0 1 auto; min-width: 0; max-width: 28ch; }
+.composer-model-thinking-level { flex: 0 1 auto; min-width: 0; }
+.composer-model-thinking-chevron { flex: none; }
+@container composer-stack (max-width: 1000px) {
+  .composer-model-thinking-model { max-width: 22ch; }
+  .composer-toolbar { flex-wrap: nowrap; }
 }
-
-.composer-left,
-.composer-right,
-.composer-model-thinking {
-  flex: 0 1 auto;
-}
-
-.composer-right {
-  justify-content: flex-end;
-}
-
-.composer-model-thinking {
-  min-width: 0;
-}
-
-@container composer-stack (max-width: 560px) {
-  .composer-model-thinking-model { max-width: 136px; }
-  .composer-model-thinking-level { max-width: 68px; }
-  .composer-toolbar:has(.composer-access) { flex-wrap: wrap; }
-  .composer-toolbar:has(.composer-access) .composer-right { flex: 1 0 100%; }
-  .composer-toolbar .composer-access { max-width: none; flex: 1; }
-}
-
-@container composer-stack (max-width: 450px) {
+@container composer-stack (max-width: 440px) {
   .composer-toolbar { flex-wrap: wrap; }
-  .composer-model-thinking-model { max-width: 108px; }
-  .composer-model-thinking-level { max-width: 58px; }
-  .composer-toolbar .composer-right:has(.mode-chip) { flex: 1 0 100%; }
-  .composer-model-thinking-chevron { flex: 0 0 auto; }
+  .composer-toolbar .composer-model-thinking { flex: 0 1 calc(100% - 80px); }
+  .composer-toolbar .composer-right { flex: 1 0 100%; }
 }
 
 @media (prefers-reduced-transparency: reduce) {
@@ -66,7 +47,6 @@
   .composer-model-thinking-menu,
   .composer-thinking-option,
   .native-composer-menu,
-  .native-image-preview-frame,
   .composer-access-menu { animation: none !important; transition: none !important; }
   .composer-toolbar button:active { transform: none !important; }
 }
@@ -89,7 +69,7 @@
 @media (prefers-reduced-motion: reduce) {
   .main-pane,
   .app-shell.sidebar-collapsed .main-pane {
-    --chat-width-transition: 0.01ms linear;
+    --chat-width-transition: 0ms linear;
   }
 
   .thread-scroll {
@@ -115,8 +95,8 @@
   .work-panel.is-exiting,
   .sidebar,
   .sidebar.is-exiting {
-    /* Near-zero (not none): exit unmount listens for animationend. */
-    animation-duration: 0.01ms !important;
+    /* Zero-duration animations still dispatch animationend for exit unmounts. */
+    animation-duration: 0ms !important;
   }
 
   /* The top bar's lead-in only exists to track the dock's motion. */
@@ -124,17 +104,17 @@
   .conversation-topbar.ct-collapsed,
   .conversation-topbar .ct-lead,
   .conversation-topbar.ct-collapsed .ct-lead {
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
   }
 
   /* The project fold is a height change: keep both endpoints, drop the travel. */
   .sidebar-session-group-body.project {
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
   }
 
   .thread-item,
   .sidebar-session-group-header {
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
   }
 
   .route-pending-indicator {
@@ -160,19 +140,43 @@
   .btn,
     .icon-btn,
     .send-btn,
+    .stop-btn,
     .title-nav-btn,
     .nav-item,
     .copy-btn,
     .sidebar-toolbar-button,
-  .sidebar-session-group-add,
-  .review-change-card,
-  .review-change-card-header,
-  .review-change-card-caret {
+  .sidebar-session-group-add {
     transform: none !important;
-    transition-duration: 0.01ms !important;
+    transition-duration: 0ms !important;
   }
 
-  .review-change-card-body {
-    animation: none;
+}
+
+/* The supported desktop minimum is 900×600, not the phone breakpoint. */
+@media (max-width: 1100px) {
+  .settings-shell { --ds-settings-nav-width: 216px; }
+  .settings-content { padding-inline: 20px; }
+  .settings-row-control { max-width: 100%; }
+}
+@media (max-height: 680px) {
+  .search-overlay { padding-block: 36px 20px; }
+  .overlay, .modal-backdrop { padding: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep animationend-driven unmounts, without visible travel or delay. */
+  *, *::before, *::after {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .motion-swap-out, .live-status-label, .ui-tooltip,
+  .ui-floating-presence.is-open, .ui-floating-presence.is-open.is-leaving,
+  .overlay, .search-overlay, .overlay.is-leaving, .search-overlay.is-leaving,
+  .overlay .dialog, .search-overlay .search-dialog,
+  .overlay.is-leaving .dialog, .search-overlay.is-leaving .search-dialog {
+    animation-duration: var(--motion-duration-reduced) !important;
   }
 }

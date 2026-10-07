@@ -1,5 +1,5 @@
 /** Renderer-only shape; callers project final answers before tool output. */
-export type MinimapMessage = { id: string; role: string; content?: string };
+export type MinimapMessage = { id: string; role: string; content?: string; hasContent?: boolean };
 
 export type ConversationMinimapMarker = {
   id: string;
@@ -34,6 +34,20 @@ export function buildConversationMinimapMarkers(messages: readonly MinimapMessag
   return messages.flatMap(message => {
     if (message.role !== 'user' && message.role !== 'assistant') return [];
     const preview = minimapPreview(message.content || '');
-    return preview ? [{ id: message.id, role: message.role, preview }] : [];
+    return preview || message.hasContent ? [{ id: message.id, role: message.role, preview }] : [];
   });
+}
+
+/** Ordered anchors: the entry at the reading line wins; equal tops prefer the later entry. */
+export function activeMinimapIndex(count: number, atBottom: boolean, scrollTop: number, readingLine: number, topAt: (index: number) => number): number {
+  if (!count) return -1;
+  if (atBottom) return count - 1;
+  if (scrollTop <= 1) return 0;
+  let low = 0, high = count;
+  while (low < high) {
+    const middle = (low + high) >>> 1;
+    if (topAt(middle) <= readingLine) low = middle + 1;
+    else high = middle;
+  }
+  return Math.max(0, low - 1);
 }

@@ -8,19 +8,32 @@
   Chat prose — refined markdown typography for the assistant transcript.
   Goal: calm reading surface with clear hierarchy — headings without rules,
   links always discoverable, borderless inline code, quotes as soft tiles, and
-  code/table shells that sit in the same family as the rest of the UI. Opaque
-  code insets keep syntax crisp beneath the glass language rail.
+  code/table shells that sit in the same family as the rest of the UI. No block
+  draws a stroke (D297): tone and spacing carry the structure.
   Blocks render as direct children of .prose-chat.
 */
 .prose-chat {
   color: var(--ds-text-primary);
-  font-size: var(--text-base);
-  line-height: var(--leading-prose);
+  font-size: var(--text-reading);
+  line-height: var(--leading-reading);
   overflow-wrap: break-word;
   word-break: break-word;
   text-wrap: pretty;
   letter-spacing: var(--tracking-normal);
 }
+
+.assistant-turn-response > .timeline-part > .message-bubble > .prose-chat,
+.message-row.assistant:not(.assistant-turn) > .message-col > .message-bubble > .prose-chat {
+  color: var(--tl-ink-strong);
+  font-size: var(--text-reading);
+  line-height: var(--leading-reading);
+}
+
+/* Table actions float over the corner without reserving a blank row. */
+.prose-chat .markdown-table { position: relative; }
+.prose-chat .markdown-table > .markdown-table-actions { position: absolute; top: 3px; right: 3px; z-index: 2; margin: 0; padding: 2px; border-radius: var(--tl-radius-row); background: var(--ds-bg-elevated-opaque); opacity: 0; pointer-events: none; transition: opacity var(--motion-duration-fast) var(--motion-ease-out); }
+.prose-chat .markdown-table:hover > .markdown-table-actions, .prose-chat .markdown-table:focus-within > .markdown-table-actions { opacity: 1; pointer-events: auto; }
+@media (prefers-reduced-motion: reduce) { .prose-chat .markdown-table > .markdown-table-actions { transition: none; } }
 
 .prose-chat > :first-child {
   margin-top: 0 !important;
@@ -58,14 +71,14 @@
 
 /* Superscript refs keep the line box from stretching. */
 .prose-chat sup {
-  line-height: 0;
+  line-height: var(--leading-zero);
 }
 
 /* GFM footnotes: quiet appendix set apart by space (their <hr> is hidden). */
 .prose-chat .footnotes {
   margin: 1.6em 0 0;
   color: var(--ds-text-muted);
-  font-size: var(--text-sm-plus);
+  font-size: var(--text-secondary);
 }
 
 .prose-chat .footnotes hr {
@@ -92,19 +105,20 @@
   margin: 1.25em 0 0.45em;
   color: var(--ds-text-primary);
   font-weight: var(--font-weight-semibold);
-  letter-spacing: var(--tracking-tight);
-  line-height: var(--leading-tight);
+  letter-spacing: var(--tracking-normal);
+  line-height: var(--leading-title);
   text-wrap: balance;
 }
 
 .prose-chat h1 {
-  font-size: var(--text-xl);
-  letter-spacing: var(--tracking-tighter);
-  line-height: var(--leading-tighter);
+  font-size: var(--text-h1);
+  letter-spacing: var(--tracking-title);
+  line-height: var(--leading-title);
 }
 
 .prose-chat h2 {
-  font-size: var(--text-lg-plus);
+  font-size: var(--text-h2);
+  letter-spacing: var(--tracking-title);
 }
 
 :root[data-theme="light"] .prose-chat h5,
@@ -113,17 +127,17 @@
 }
 
 .prose-chat h3 {
-  font-size: var(--text-lg);
+  font-size: var(--text-h3);
 }
 
 .prose-chat h4 {
-  font-size: var(--text-base-plus);
-  font-weight: var(--font-weight-medium-plus);
+  font-size: var(--text-reading);
+  font-weight: var(--font-weight-medium);
 }
 
 .prose-chat h5,
 .prose-chat h6 {
-  font-size: var(--text-base);
+  font-size: var(--text-ui);
   color: var(--ds-text-secondary);
   font-weight: var(--font-weight-medium);
   letter-spacing: var(--tracking-normal);
@@ -294,8 +308,8 @@
   display: inline-block;
   padding: 0.05em 0.4em;
   font-family: var(--font-mono);
-  font-size: var(--text-xs-plus);
-  line-height: var(--leading-normal);
+  font-size: var(--text-meta);
+  line-height: var(--leading-code);
   border-radius: var(--radius-3xs);
   background: var(--ds-tile-deep);
   color: var(--ds-prose-kbd-fg);
@@ -306,7 +320,7 @@
    around every token in dense technical answers. */
 .prose-chat code {
   font-family: var(--font-mono);
-  font-size: var(--text-sm-plus);
+  font-size: var(--text-code);
   font-variant-ligatures: none;
   background: color-mix(in oklab, var(--ds-text-primary) 7%, transparent);
   border-radius: var(--radius-3xs);
@@ -322,19 +336,22 @@
 /* Fallback for a bare <pre> that bypassed the code-block chrome */
 .prose-chat pre {
   font-family: var(--font-mono);
-  font-size: var(--text-sm-plus);
-  line-height: var(--leading-relaxed);
-  background: var(--ds-bg-inset);
-  border-radius: 12px;
+  font-size: var(--text-code);
+  line-height: var(--leading-code);
+  background: #282c34;
+  border-radius: var(--radius-md-plus);
   padding: 14px 16px;
   overflow: auto;
   margin: 0.85em 0;
-  box-shadow: 0 0 0 .5px var(--lg-stroke);
+  box-shadow: none;
   color: #abb2bf;
 }
 
-/* Keep the syntax theme's ink on the shared opaque inset. */
+/* Shiki one-light plate + ink. The Shiki theme owns this pair
+   (apps/desktop/src/lib/shiki.ts); see the guard header. */
 :root[data-theme="light"] .prose-chat pre {
+  background: #fafafa;
+  box-shadow: none;
   color: #383a42;
 }
 
@@ -362,8 +379,8 @@
   width: 100%;
   table-layout: auto;
   border-collapse: collapse;
-  font-size: var(--text-md);
-  line-height: var(--leading-normal);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-ui);
 }
 
 .prose-chat th,
@@ -378,8 +395,8 @@
   font-weight: var(--font-weight-medium);
   color: var(--ds-text-primary);
   background: var(--ds-tile-deep);
-  font-size: var(--text-sm-plus);
-  letter-spacing: var(--tracking-wide);
+  font-size: var(--text-secondary);
+  letter-spacing: var(--tracking-normal);
 }
 
 .prose-chat tbody tr:nth-child(even) td {
@@ -395,7 +412,7 @@
 }
 
 .prose-chat td code {
-  font-size: var(--text-sm);
+  font-size: var(--text-meta);
 }
 
 /* KaTeX display math: keep long formulas scrollable, not overflowing */
@@ -409,24 +426,27 @@
 }
 
 .prose-chat .katex {
-  font-size: var(--text-base-plus);
+  font-size: var(--text-reading);
 }
 
 /*
-  Code block — opaque reading surface with a static glass language rail.
-  Shiki owns the syntax palette; only the outer card paints the inset.
+  Code block — single surface + slim language rail.
+  Body background is transparent so Shiki (one-dark-pro / one-light) owns the
+  palette; we only paint the outer card once (no nested pre/code wash).
 */
 .code-block {
+  --code-block-bg: #282c34; /* one-dark-pro editor background */
   margin: 0.9em 0;
-  border-radius: 12px;
-  background: var(--ds-bg-inset);
+  border-radius: var(--radius-md-plus);
+  background: var(--code-block-bg);
   overflow: hidden;
-  box-shadow: 0 0 0 .5px var(--lg-stroke);
+  box-shadow: none;
   color: #abb2bf;
 }
 
-/* Retain Shiki one-light ink without changing the opaque inset material. */
+/* Shiki one-light plate + ink, the same pair as the bare `pre` fallback. */
 :root[data-theme="light"] .code-block {
+  --code-block-bg: #fafafa; /* one-light editor background */
   color: #383a42;
 }
 
@@ -437,11 +457,13 @@
   gap: 8px;
   min-height: 32px;
   padding: 3px 6px 3px 14px;
+  /* The head is a slightly lighter band on the editor surface; no rule. */
+  background: var(--ds-code-head-bg);
 }
 
 /* Shiki one-light token ink for the language rail and the copy button. */
 :root[data-theme="light"] .code-block-lang {
-  color: color-mix(in oklab, #383a42 62%, transparent);
+  color: #383a42;
 }
 
 :root[data-theme="light"] .code-block .code-copy-btn {
@@ -449,15 +471,16 @@
   opacity: 0.9;
 }
 
+/* The hover fill is ours (--ds-code-hover-bg); the ink is the Shiki token. */
 :root[data-theme="light"] .code-block .code-copy-btn:hover {
   color: #383a42;
 }
 
 .code-block-lang {
-  color: color-mix(in oklab, #abb2bf 72%, transparent);
-  font-size: var(--text-xs-plus);
+  color: #abb2bf;
+  font-size: var(--text-meta);
   font-weight: var(--font-weight-medium);
-  letter-spacing: var(--tracking-wide);
+  letter-spacing: var(--tracking-normal);
   text-transform: lowercase;
   font-family: var(--font-mono);
   -webkit-user-select: none;
@@ -470,8 +493,9 @@
   justify-content: center;
   width: 28px;
   height: 28px;
-  border-radius: var(--lg-radius-capsule);
+  border-radius: var(--radius-xs);
   color: color-mix(in oklab, #abb2bf 72%, transparent);
+  transition: background var(--motion-duration-fast) var(--motion-ease-out), color var(--motion-duration-fast) var(--motion-ease-out), opacity var(--motion-duration-fast) var(--motion-ease-out);
   opacity: 0.75;
 }
 
@@ -483,6 +507,7 @@
 
 .code-block .code-copy-btn:hover {
   color: #d7dae0;
+  background: var(--ds-code-hover-bg);
 }
 
 .code-block .code-copy-btn.copied {
@@ -496,8 +521,8 @@
   border-radius: 0;
   background: transparent !important;
   overflow-x: auto;
-  font-size: var(--text-sm-plus);
-  line-height: var(--leading-relaxed);
+  font-size: var(--text-code);
+  line-height: var(--leading-code);
   box-shadow: none;
   tab-size: 2;
   color: inherit;
@@ -507,7 +532,7 @@
   display: block;
   width: fit-content;
   min-width: 100%;
-  font-size: var(--text-sm-plus);
+  font-size: var(--text-code);
   white-space: pre;
   background: transparent !important;
   border: 0 !important;
@@ -551,10 +576,10 @@
   min-width: 0;
   color: var(--ds-text-secondary);
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
+  font-size: var(--text-caption);
   font-weight: var(--font-weight-medium);
-  line-height: var(--leading-compact);
-  letter-spacing: var(--tracking-wide);
+  line-height: var(--leading-code);
+  letter-spacing: var(--tracking-normal);
   text-transform: lowercase;
   -webkit-user-select: none;
   user-select: none;
@@ -667,8 +692,8 @@
   padding: 9px 12px;
   color: var(--ds-error);
   background: color-mix(in oklab, var(--ds-error) 6%, transparent);
-  font-size: var(--text-sm-plus);
-  line-height: var(--leading-normal);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-ui);
 }
 
 .prose-chat .mermaid-source {
@@ -679,8 +704,8 @@
   background: #282c34;
   color: #abb2bf;
   overflow: auto;
-  font-size: var(--text-sm-plus);
-  line-height: var(--leading-relaxed);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-reading);
   box-shadow: none;
 }
 
@@ -705,9 +730,9 @@
 
 /* Thinking prose stays quieter than answer prose but inherits hierarchy. */
 .thinking-prose {
-  color: var(--ds-text-secondary);
-  font-size: var(--text-sm-plus);
-  line-height: var(--leading-chat);
+  color: var(--tl-ink-meta);
+  font-size: var(--text-secondary);
+  line-height: var(--leading-reading);
 }
 
 :root[data-theme="light"] .thinking-prose {
@@ -744,4 +769,10 @@
 
 .thinking-prose blockquote {
   background: var(--ds-tile);
+}
+
+/* Live glyphs keep inline metrics; the settled prefix contains no wrappers. */
+.streaming-glyph { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .streaming-glyph { opacity: 1 !important; }
 }

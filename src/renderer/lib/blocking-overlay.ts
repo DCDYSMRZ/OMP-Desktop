@@ -11,13 +11,14 @@ const subscribe = (listener: () => void) => {
 };
 export const isBlockingOverlayActive = () => owners.size > 0;
 
-export function useBlockingOverlay() {
+export function useBlockingOverlay(active = true) {
   useLayoutEffect(() => {
+    if (!active) return;
     const owner = Symbol();
     owners.add(owner);
     notify();
     return () => { owners.delete(owner); notify(); };
-  }, []);
+  }, [active]);
 }
 
 export function useBlockingOverlayActive() {

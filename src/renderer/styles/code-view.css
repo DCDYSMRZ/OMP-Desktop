@@ -1,0 +1,66 @@
+/* Shared line-numbered source viewer (ui/CodeView.tsx). */
+.code-view {
+  position: relative;
+  min-width: 0;
+  max-width: 100%;
+  border-radius: var(--tl-radius-block);
+  background: var(--tl-code-bg);
+  font-family: var(--font-mono);
+  font-size: var(--text-code);
+  line-height: var(--leading-code);
+  color: color-mix(in oklab, var(--gray-0) 86%, transparent);
+}
+.code-view-scroll {
+  max-width: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  padding: 8px 0;
+}
+.code-view-lines {
+  display: grid;
+  min-width: max-content;
+}
+.code-view.is-wrapped .code-view-lines {
+  min-width: 0;
+}
+.code-view-line {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  padding-right: 14px;
+}
+.code-view.no-gutter .code-view-line {
+  grid-template-columns: 1fr;
+  padding-left: 14px;
+}
+.code-view-gutter {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 3.2em;
+  padding: 0 12px 0 10px;
+  background: var(--tl-code-bg);
+  color: var(--tl-ink-meta);
+  text-align: right;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.code-view-code {
+  white-space: pre;
+  tab-size: 2;
+}
+.code-view.is-wrapped .code-view-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.code-view-line.is-elided .code-view-code {
+  color: var(--tl-ink-meta);
+}
+.code-view-line[data-highlight] {
+  background: color-mix(in oklab, var(--ds-warning) 6%, transparent);
+}
+.code-view-line[data-highlight] .code-view-gutter {
+  background: color-mix(in oklab, var(--ds-warning) 6%, var(--tl-code-bg));
+  box-shadow: inset 2px 0 0 color-mix(in oklab, var(--ds-warning) 70%, transparent);
+  color: color-mix(in oklab, var(--ds-warning) 85%, var(--gray-0));
+}

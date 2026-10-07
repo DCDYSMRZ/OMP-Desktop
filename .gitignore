@@ -7,3 +7,20 @@ release/
 .env.*
 !.env.example
 !.env.*.example
+
+# Local smoke-test homes can contain runtime state and credentials.
+/.home-smoke/
+/.review-smoke/
+/.home-excerpt-smoke/
+
+# Private signing credentials and keychains must remain local.
+*.p12
+*.pfx
+*.p8
+*.key
+*.keychain
+*.keychain-db
+
+# The application icon is source, not generated build output.
+!/build/
+!/build/icon.icns

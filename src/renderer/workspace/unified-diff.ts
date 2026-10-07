@@ -83,3 +83,68 @@ export function parseUnifiedDiff(patch: string): ParsedDiff {
   if (result.state === 'text' && !lineCount) result.state = 'noLineDetails';
   return result;
 }
+
+export interface DiffWord { text: string; changed: boolean }
+
+/** Word LCS preserves punctuation and whitespace; very long lines use bounded edge matching. */
+export function diffWords(before: string, after: string): { before: DiffWord[]; after: DiffWord[] } {
+  const a = before.match(/[\p{L}\p{N}_]+|\s+|[^\p{L}\p{N}_\s]/gu) ?? [];
+  const b = after.match(/[\p{L}\p{N}_]+|\s+|[^\p{L}\p{N}_\s]/gu) ?? [];
+  const left = a.map(text => ({ text, changed: true }));
+  const right = b.map(text => ({ text, changed: true }));
+  let start = 0, endA = a.length, endB = b.length;
+  while (start < endA && start < endB && a[start] === b[start]) {
+    left[start].changed = right[start].changed = false; start++;
+  }
+  while (endA > start && endB > start && a[endA - 1] === b[endB - 1]) {
+    left[--endA].changed = right[--endB].changed = false;
+  }
+  const rows = endA - start, columns = endB - start, stride = columns + 1;
+  if (rows * columns <= 65536 && rows && columns) {
+    const lengths = new Uint32Array((rows + 1) * stride);
+    for (let i = rows - 1; i >= 0; i--) for (let j = columns - 1; j >= 0; j--) {
+      lengths[i * stride + j] = a[start + i] === b[start + j]
+        ? lengths[(i + 1) * stride + j + 1] + 1
+        : Math.max(lengths[(i + 1) * stride + j], lengths[i * stride + j + 1]);
+    }
+    let i = 0, j = 0;
+    while (i < rows && j < columns) {
+      if (a[start + i] === b[start + j]) { left[start + i++].changed = right[start + j++].changed = false; }
+      else if (lengths[(i + 1) * stride + j] >= lengths[i * stride + j + 1]) i++;
+      else j++;
+    }
+  }
+  return { before: left, after: right };
+}
+
+export interface ReviewDiffLine extends DiffLine { words?: DiffWord[] }
+export type ReviewDiffRow = { kind: 'line'; before?: ReviewDiffLine; after?: ReviewDiffLine }
+  | { kind: 'context'; id: number; lines: DiffLine[] };
+
+/** Pair only adjacent replacement blocks, never across unchanged context. */
+export function reviewDiffRows(lines: DiffLine[]): ReviewDiffRow[] {
+  const rows: ReviewDiffRow[] = [];
+  for (let index = 0; index < lines.length;) {
+    const start = index;
+    if (lines[index].type === 'context') {
+      while (index < lines.length && lines[index].type === 'context') index++;
+      const context = lines.slice(start, index);
+      const visible = (line: DiffLine) => rows.push({ kind: 'line', before: line, after: line });
+      if (context.length > 4) {
+        context.slice(0, 2).forEach(visible);
+        rows.push({ kind: 'context', id: start, lines: context.slice(2, -2) });
+        context.slice(-2).forEach(visible);
+      } else context.forEach(visible);
+      continue;
+    }
+    const removed: DiffLine[] = [], added: DiffLine[] = [];
+    while (index < lines.length && lines[index].type === 'del') removed.push(lines[index++]);
+    while (index < lines.length && lines[index].type === 'add') added.push(lines[index++]);
+    for (let offset = 0; offset < Math.max(removed.length, added.length); offset++) {
+      const before = removed[offset], after = added[offset];
+      const words = before && after ? diffWords(before.text, after.text) : undefined;
+      rows.push({ kind: 'line', before: before && { ...before, words: words?.before }, after: after && { ...after, words: words?.after } });
+    }
+  }
+  return rows;
+}

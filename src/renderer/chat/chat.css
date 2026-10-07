@@ -1,39 +1,46 @@
 /* Native-only surfaces augment the retained PI Desktop chat/composer cascade. */
-.native-composer-menu.lg-regular { position: absolute; z-index: 40; top: auto; bottom: calc(100% + 8px); left: 0; right: 0; max-height: min(360px, calc(100vh - var(--composer-block-size, 180px) - 80px)); overflow: auto; border: 0; border-radius: 14px; padding: 6px; --lg-origin-x: 12px; --lg-origin-y: 100%; }
-.composer-model-menu.native-model-picker { min-width: 320px; width: min(320px, calc(100vw - 24px)); }
+.native-composer-menu { position: absolute; z-index: var(--ds-layer-menu); top: auto; bottom: calc(100% + 8px); left: 0; right: 0; max-height: min(360px, calc(100vh - var(--composer-block-size, 180px) - 80px)); overflow: auto; border: 1px solid var(--ds-border-subtle); border-radius: var(--radius-lg); background: var(--ds-bg-elevated-opaque); box-shadow: var(--ds-shadow-dialog); padding: 6px; }
+.composer-model-menu.native-model-picker { min-width: 0; width: min(320px, calc(100vw - 24px)); }
 .composer-shell .composer-input { overflow-y: auto; overscroll-behavior: contain; }
 .native-composer-menu .composer-ac-item, .native-model-picker .composer-ac-item { display: flex; width: 100%; min-height: 30px; text-align: left; padding: 4px 8px; border-radius: 9px; gap: 12px; align-items: center; }
-.native-composer-menu .composer-ac-item:hover, .native-composer-menu .composer-ac-item.active, .native-model-picker .composer-ac-item:hover { background: color-mix(in oklab, var(--liq-mid) 12%, transparent); }
+.native-composer-menu .composer-ac-item:hover, .native-composer-menu .composer-ac-item.active, .native-model-picker .composer-ac-item:hover { background: var(--ds-bg-hover); }
 .native-menu-heading { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; }
-.omp-history-initial { width: min(100%, var(--chat-content-max-width, 760px)); margin: 0 auto; padding: 24px; overflow-wrap: anywhere; }
+.omp-history-initial { flex: 1; min-height: 0; width: min(100%, var(--chat-content-max-width, 760px)); margin: 0 auto; padding: 24px; overflow: auto; overflow-wrap: anywhere; }
+/* Session hydration status sits outside transcript flow and never shifts a reading anchor. */
+.omp-history-loading { position: absolute; top: 8px; right: 24px; z-index: 1; max-width: calc(100% - 48px); padding: 4px 8px; border-radius: var(--radius-sm); background: var(--ds-bg-elevated-opaque); color: var(--ds-text-muted); font-size: var(--text-meta); overflow-wrap: anywhere; pointer-events: none; }
 .native-attachments { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
 .native-attachments img { width: 42px; height: 42px; object-fit: cover; border-radius: 5px; }
 .native-attachments .composer-chip { max-width: 100%; min-height: 28px; height: auto; flex-wrap: wrap; white-space: normal; overflow-wrap: anywhere; }
 .native-attachments .composer-chip.is-expired { color: var(--ds-error); }
 .native-message-image { max-width: min(100%, 560px); max-height: 440px; object-fit: contain; border-radius: 12px; }
-.native-tool-details { margin-left: 20px; padding: 8px 12px; border-left: 1px solid var(--ds-border-default); overflow: auto; max-height: 500px; }
-.native-tool-details pre, .native-widget { white-space: pre-wrap; overflow-wrap: anywhere; }
+.native-widget { white-space: pre-wrap; overflow-wrap: anywhere; }
 .native-notice { white-space: pre-wrap; overflow-wrap: anywhere; }
 .native-notice.error { color: var(--ds-text-danger, #df5959); }
-.native-extension-dialog { width: min(640px, calc(100vw - 40px)); max-height: 85vh; overflow: auto; padding: 20px; border: 0; }
-.native-extension-dialog .modal-footer { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.native-extension-dialog { width: min(600px, calc(100vw - 40px)); max-height: 85vh; overflow: auto; padding: 24px; }
+.native-extension-dialog .modal-header h2 { font-size: var(--text-reading); color: var(--tl-ink-strong); line-height: var(--leading-title); }
+.native-extension-dialog .extension-question { font-size: var(--text-reading); line-height: var(--leading-reading); color: var(--tl-ink-strong); white-space: pre-wrap; margin: 0 0 16px; }
+.extension-metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 20px; color: var(--tl-ink-meta); font-size: var(--text-meta); font-variant-numeric: tabular-nums; }
+.extension-origin { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 3px 8px; border-radius: 6px; background: var(--tl-surface-strong); }
+.extension-expired { color: var(--ds-warning); }
+.native-extension-dialog .modal-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .native-extension-dialog input, .native-extension-dialog textarea { width: 100%; }
+.native-extension-dialog input:focus-visible, .native-extension-dialog textarea:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
 .native-extension-options { display: flex; flex-direction: column; gap: 8px; }
-.native-extension-options button { display: flex; align-items: flex-start; flex-direction: column; text-align: left; }
-.native-extension-options small { color: var(--ds-text-muted); white-space: pre-wrap; }
+.native-extension-options button { display: flex; align-items: flex-start; flex-direction: column; text-align: left; gap: 6px; min-height: 52px; height: auto; padding: 12px 14px; white-space: normal; background: var(--tl-surface); border: 0; color: var(--tl-ink-strong); font-size: var(--text-secondary); }
+.native-extension-options button:hover:not(:disabled) { background: var(--tl-surface-hover); }
+.native-extension-options small { color: var(--tl-ink-meta); font-size: var(--text-meta); white-space: pre-wrap; line-height: var(--leading-ui); }
 .transcript-running-status { display: flex; align-items: center; gap: 8px; padding: 12px 4px; color: var(--ds-text-muted); }
 .composer-toolbar { justify-content: flex-start; gap: 6px; }
 .composer-toolbar .composer-left { flex: 0 0 auto; }
 .composer-toolbar .composer-right { margin-left: auto; }
-.composer-toolbar .composer-access { display: inline-flex; align-items: center; gap: 6px; min-width: 0; max-width: 240px; height: 28px; padding: 0 8px; border-radius: var(--lg-radius-capsule); background: color-mix(in oklab, var(--ds-warning) 16%, var(--lg-tint-thin)); color: var(--ds-text-secondary); font-size: var(--text-xs); text-align: left; transition: background var(--motion-duration-fast) var(--motion-ease-out), transform 240ms var(--lg-spring); }
-.composer-access > svg { flex: 0 0 auto; color: var(--ds-warning); }
-.composer-access > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.composer-toolbar .composer-access:hover { background: color-mix(in oklab, var(--ds-warning) 16%, var(--lg-tint-regular)); }
-.composer-toolbar button:focus-visible, .native-model-picker button:focus-visible, .composer-access-menu button:focus-visible { outline: 2px solid color-mix(in oklab, var(--liq-mid) 55%, transparent); outline-offset: 2px; }
-.composer-fork-actions { flex-wrap: wrap; }
+.composer-toolbar button:focus-visible, .native-model-picker button:focus-visible, .composer-access-menu button:focus-visible, .composer-command-menu button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
 .native-task-delivery { min-width: 0; }
 .native-task-result { display: flex; align-items: flex-start; gap: 4px; min-width: 0; }
 .native-task-result > .tool-row { flex: 1; min-width: 0; }
 .native-task-result .tool-row-name { min-width: 0; overflow-wrap: anywhere; white-space: normal; }
 .native-task-open { flex: 0 0 28px; margin-top: 3px; }
 .native-task-source { color: var(--ds-text-muted); }
+.minimap-earlier { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: var(--radius-sm); color: var(--ds-text-secondary); font-size: var(--text-secondary); }
+.minimap-earlier:hover { color: var(--ds-text-primary); background: var(--ds-bg-hover); }
+.minimap-earlier:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.minimap-earlier:disabled { opacity: 0.5; }

@@ -48,6 +48,49 @@ async function fingerprint(path: string, info: BigIntStats, buffer: Buffer, outp
   } finally { await file.close(); }
 }
 
+/** Read-only readiness check, not a reservation or substitute for staging verification. */
+export async function preflightArchiveFork(source: HistorySource, artifactRoot: string): Promise<void> {
+  const sourcePath = await canonicalLeaf(source.path);
+  if (source.path !== sourcePath) source = new HistorySource(sourcePath, source.revision);
+  if (sourceRevision(await checked(source.path)) !== source.revision) throw new Error('Archive changed before fork preflight');
+  let journalBytes = 0;
+  for await (const chunk of source.chunks()) {
+    journalBytes += chunk.length;
+    if (journalBytes > BYTE_LIMIT) throw new Error('Archive fork exceeds the 512 MiB decompressed source staging limit');
+  }
+  artifactRoot = await canonicalLeaf(artifactRoot);
+  let rootExists = true;
+  try { if (!(await checked(artifactRoot)).isDirectory()) throw new Error('Archive artifact root must be a real directory'); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') rootExists = false; else throw error; }
+  const pending = rootExists ? [artifactRoot] : [];
+  const observed: { path: string; revision: string }[] = [];
+  let entries = pending.length;
+  let bytes = 0;
+  while (pending.length) {
+    const path = pending.pop()!;
+    const info = await checked(path);
+    observed.push({ path, revision: revision(info) });
+    if (info.isDirectory()) {
+      for await (const entry of await opendir(path)) {
+        if (++entries > FILE_LIMIT) throw new Error('Archive fork exceeds the 10000 artifact entry staging limit');
+        pending.push(join(path, entry.name));
+      }
+    } else {
+      bytes += Number(info.size);
+      if (bytes > BYTE_LIMIT) throw new Error('Archive fork exceeds the 512 MiB artifact staging limit');
+      const file = await open(path, READ_FLAGS);
+      try { if (revision(await file.stat({ bigint: true })) !== revision(info)) throw new Error('Archive artifact changed during preflight'); }
+      finally { await file.close(); }
+    }
+  }
+  for (const item of observed) if (revision(await checked(item.path)) !== item.revision) throw new Error('Archive artifact changed during preflight');
+  if (!rootExists) {
+    try { await lstat(artifactRoot); throw new Error('Archive artifact root appeared during preflight'); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  }
+  await source.assert();
+}
+
 /**
  * Explicit-action only: a private source.jsonl plus sibling source/ is the native
  * --fork layout. The native process alone creates the durable session identity.

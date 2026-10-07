@@ -1,0 +1,23 @@
+.live-status-row { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 36px; padding: 4px 0; color: var(--tl-ink-meta); background: var(--ds-bg-primary); font-size: var(--text-meta); font-variant-numeric: tabular-nums; opacity: 1; visibility: visible; transition: opacity 120ms var(--ease-standard), visibility 0s; }
+.live-status-row[aria-hidden="true"] { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 120ms var(--ease-standard), visibility 0s 120ms; }
+.live-status-main { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 28px; text-align: start; border-radius: 8px; }
+.live-status-label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; animation: live-status-appear 120ms var(--ease-standard); }
+.live-status-time, .live-status-queue { flex: none; }
+.live-status-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; flex: none; }
+.live-status-row[data-state=running] .live-status-dot { animation: live-status-breathe 1.8s ease-in-out infinite; }
+.live-status-row:is([data-state=attention],[data-state=retry]) { color: var(--ds-warning); }
+.live-status-return { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 28px; min-width: 28px; padding: 4px 8px; border-radius: 6px; }
+.live-status-idle { justify-content: flex-end; }
+.live-status-main:hover, .live-status-return:hover { background: var(--tl-surface-hover); }
+.live-status-row button:focus-visible { outline: 2px solid var(--ds-focus); outline-offset: 2px; }
+.live-status-row .session-meter-item { flex: 0 1 auto; min-width: 0; max-width: 40%; }
+.live-status-row .session-meter-chip > span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+@keyframes live-status-appear { from { opacity: .3; } to { opacity: 1; } }
+@keyframes live-status-breathe { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .live-status-label { animation-duration: 80ms; } .live-status-row, .live-status-row[aria-hidden="true"] { transition-duration: 80ms, 0s; } .live-status-row[aria-hidden="true"] { transition-delay: 0s, 80ms; } .live-status-row[data-state=running] .live-status-dot { animation: none; } }
+.inline-question-card.native-extension-dialog { width: 100%; max-height: none; box-sizing: border-box; margin: 16px 0; padding: 16px; border-radius: 12px; background: var(--tl-surface); border: 1px solid var(--tl-rail); }
+.inline-question-card .extension-metadata { gap: 8px; margin-bottom: 16px; }
+.inline-question-card .native-extension-options button { min-height: 36px; text-align: start; }
+.native-extension-dialog .extension-question-secondary { color: var(--tl-ink-meta); font-size: var(--text-secondary); }
+.inline-question-card .extension-metadata:empty { display: none; }
+.live-status-announcement { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }

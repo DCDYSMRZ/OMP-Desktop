@@ -1,3 +1,5 @@
+import { UserErrorNotice } from '../lib/UserErrorNotice';
+import { UserFacingError, preserveUserError } from '../lib/user-errors';
 import {
   createContext,
   Fragment,
@@ -28,6 +30,11 @@ import {
 import { useTranslation } from "react-i18next";
 import type { ThemedToken } from "shiki";
 import "katex/dist/katex.min.css";
+import { REVEAL_DURATION, type StreamingReveal } from "../chat/streaming-reveal";
+import { rehypeStreamingText } from "../chat/streaming-markdown";
+import { remarkStreamingTail } from '../chat/streaming-tail';
+import { rehypeInlineImageMarkers } from '../chat/inline-image-markers';
+import { useReducedMotion } from "./motion";
 import {
   IconCheck,
   IconCircleAlert,
@@ -52,7 +59,7 @@ import {
 } from "../lib/latex-math";
 import { useReferencedImageDataUrl } from "../lib/use-referenced-image-data-url";
 import { absoluteImagePath, remarkLocalImagePaths } from "../lib/markdown-image-paths";
-import { remarkNormalizeWrappedMarkdownLinkDestinations } from "../lib/markdown-link-destinations";
+import { markdownSessionResourceReference, remarkNormalizeWrappedMarkdownLinkDestinations } from "../lib/markdown-link-destinations";
 import {
   remarkChatFileLinks,
   resolvePreviewTarget,
@@ -65,21 +72,15 @@ import {
   MermaidSourceTooLargeError,
   renderMermaidSvg,
 } from "../lib/mermaid";
-import {
-  ensureLang,
-  getHighlightVersion,
-  resolveLang,
-  subscribeHighlighter,
-  themeForMode,
-  tokenizeIncremental,
-  type LineCache,
-  type ThemeMode,
-} from "../lib/shiki";
+import { resolveLang, themeForMode, type ThemeMode } from "../lib/shiki";
+import { createHighlightClient, type HighlightClient } from '../lib/highlight-client';
 
+export interface MarkdownImageMarkers { count: number; render: (index: number, literal: string) => ReactNode }
 type MarkdownActions = {
   cwd: string;
   onOpenFile?: (path: string) => void;
   onOpenSessionResource?: (reference: string) => void;
+  imageMarkers?: MarkdownImageMarkers;
   reportError: (error: unknown) => void;
 };
 const MarkdownActionsContext = createContext<MarkdownActions | null>(null);
@@ -94,7 +95,7 @@ function useOpenMarkdownFile() {
   return (path: string, baseDir?: string) => {
     const target = resolvePreviewTarget(path, cwd, baseDir);
     const relative = target?.kind === "file" ? target.path : toWorkspaceRel(path, cwd, baseDir);
-    if (!relative) { reportError(new Error(t("ompVisual.outsideWorkspace"))); return; }
+    if (!relative) { reportError(new UserFacingError(t("ompVisual.outsideWorkspace"))); return; }
     if (onOpenFile) onOpenFile(relative);
     else void window.ompDesktop.revealFile(cwd, relative).catch(reportError);
   };
@@ -169,47 +170,64 @@ function tokenStyle(token: ThemedToken): CSSProperties | undefined {
   const style: CSSProperties = {};
   if (token.color) style.color = token.color;
   if (fontStyle & 1) style.fontStyle = "italic";
-  if (fontStyle & 2) style.fontWeight = "bold";
+  if (fontStyle & 2) style.fontWeight = "var(--font-weight-semibold)";
   if (fontStyle & 4) style.textDecoration = "underline";
   return style;
 }
 
+/** Absolute source time survives Markdown reparses and changing React ancestry. */
+function RevealSpan({ at, offset, children }: { at: number; offset: number; children: ReactNode }) {
+  const reduced = useReducedMotion();
+  const [settled, setSettled] = useState(() => performance.now() >= at + REVEAL_DURATION);
+  const node = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const remaining = at + REVEAL_DURATION - performance.now();
+    if (reduced || remaining <= 0) { setSettled(true); return; }
+    const animation = node.current?.animate([{ opacity: 0 }, { opacity: 1 }], { duration: REVEAL_DURATION, easing: 'cubic-bezier(0.33, 0, 0.2, 1)', fill: 'both' });
+    if (animation) animation.currentTime = performance.now() - at;
+    const timer = window.setTimeout(() => setSettled(true), remaining);
+    return () => { window.clearTimeout(timer); animation?.cancel(); };
+  }, [at, reduced]);
+  return settled || reduced ? <>{children}</> : <span ref={node} className="streaming-glyph" data-reveal-offset={offset} data-reveal-at={at}>{children}</span>;
+}
+
+function StreamingSpan({ node: _node, children, ...props }: ComponentProps<"span"> & { node?: unknown; "data-reveal-at"?: number; "data-reveal-offset"?: number }) {
+  const at = props["data-reveal-at"];
+  return at === undefined ? <span {...props}>{children}</span> : <RevealSpan key={props["data-reveal-offset"]} at={Number(at)} offset={Number(props["data-reveal-offset"])}>{children}</RevealSpan>;
+}
+
+function MarkdownSpan(props: ComponentProps<"span"> & { node?: unknown; "data-image-marker"?: number; "data-image-literal"?: string }) {
+  const { imageMarkers } = useMarkdownActions();
+  const index = props["data-image-marker"];
+  if (imageMarkers && index !== undefined) return imageMarkers.render(Number(index), props["data-image-literal"] ?? '');
+  return <StreamingSpan {...props} />;
+}
+
 /* Rows are cached by reference in the line cache, so settled lines memo-skip. */
-const TokenLine = memo(function TokenLine({ line }: { line: ThemedToken[] }) {
-  return (
-    <>
-      {line.map((token, i) => (
-        <span key={i} style={tokenStyle(token)}>
-          {token.content}
-        </span>
-      ))}
-    </>
-  );
+export const TokenLine = memo(function TokenLine({ line }: { line: ThemedToken[] }) {
+  return <>{line.map((token, i) => <span key={i} style={tokenStyle(token)}>{token.content}</span>)}</>;
 });
 
-function useHighlightedTokens(
+export function useHighlightedTokens(
   code: string,
   lang: string,
 ): ThemedToken[][] | null {
   const resolved = resolveLang(lang);
   const mode = useThemeMode();
-  const version = useSyncExternalStore(subscribeHighlighter, getHighlightVersion);
+  const [result, setResult] = useState<{ code: string; lang: string; mode: ThemeMode; tokens: ThemedToken[][] | null }>();
+  const client = useRef<HighlightClient | null>(null);
+  const request = useRef(0);
+  const current = useRef({ code, lang, mode });
+  current.current = { code, lang, mode };
   useEffect(() => {
-    if (resolved) ensureLang(resolved);
-  }, [resolved]);
-  const cacheRef = useRef<LineCache | null>(null);
-  return useMemo(() => {
-    if (!resolved) return null;
-    const next = tokenizeIncremental(
-      cacheRef.current,
-      code,
-      resolved,
-      themeForMode(mode),
-    );
-    cacheRef.current = next;
-    return next?.tokens ?? null;
-    // `version` re-runs this once the language finishes lazy-loading.
-  }, [code, resolved, mode, version]);
+    client.current = createHighlightClient((version, tokens) => { if (version === request.current) setResult({ ...current.current, tokens }); });
+    return () => { client.current?.close(); client.current = null; };
+  }, []);
+  useEffect(() => {
+    const version = ++request.current;
+    if (resolved) client.current?.request(version, code, resolved, themeForMode(mode));
+  }, [code, resolved, mode]);
+  return result?.code === code && result.lang === lang && result.mode === mode ? result.tokens : null;
 }
 
 /**
@@ -227,12 +245,7 @@ export function HighlightedCode({
   if (!tokens) return <>{code}</>;
   return (
     <>
-      {tokens.map((line, i) => (
-        <Fragment key={i}>
-          {i > 0 ? "\n" : null}
-          <TokenLine line={line} />
-        </Fragment>
-      ))}
+      {tokens.map((line, i) => <Fragment key={i}>{i > 0 ? "\n" : null}<TokenLine line={line} /></Fragment>)}
     </>
   );
 }
@@ -242,18 +255,18 @@ function CodeBlock({ code, lang, ...position }: { code: string; lang: string } &
   const { copied, copy, error } = useCopy();
   return (
     <div className="code-block" {...position}>
-      <div className="code-block-head lg-static lg-thin">
+      <div className="code-block-head">
         <span className="code-block-lang">{lang || "text"}</span>
         <TooltipButton
-          className={`code-copy-btn lg-thin lg-capsule lg-pressable ${copied ? "copied" : ""}`}
+          className={`code-copy-btn ${copied ? "copied" : ""}`}
           tooltip={copied ? t("chat.copied") : t("chat.copy")}
           ariaLabel={t("chat.copy")}
           onClick={() => copy(code)}
         >
-          {copied ? <IconCheck size={13} /> : <IconCopy size={13} />}
+          {copied ? <IconCheck size="var(--icon-meta)" /> : <IconCopy size="var(--icon-meta)" />}
         </TooltipButton>
       </div>
-      {error ? <div role="alert">{error}</div> : null}
+      {error ? <UserErrorNotice error={error} /> : null}
       <pre>
         <code>
           <HighlightedCode code={code} lang={lang} />
@@ -355,7 +368,7 @@ function MermaidBlock({ code, ...position }: { code: string } & SourcePositionPr
     >
       <div className="mermaid-block-head">
         <span className="mermaid-block-title">
-          <IconWorkflow size={13} aria-hidden />
+          <IconWorkflow size="var(--icon-meta)" aria-hidden />
           <span>mermaid</span>
         </span>
         <div className="mermaid-block-actions">
@@ -373,9 +386,9 @@ function MermaidBlock({ code, ...position }: { code: string } & SourcePositionPr
               onClick={() => setShowSource((value) => !value)}
             >
               {showSource ? (
-                <IconWorkflow size={13} />
+                <IconWorkflow size="var(--icon-meta)" />
               ) : (
-                <IconCode size={13} />
+                <IconCode size="var(--icon-meta)" />
               )}
             </TooltipButton>
           ) : null}
@@ -386,15 +399,15 @@ function MermaidBlock({ code, ...position }: { code: string } & SourcePositionPr
             ariaLabel={t("chat.copyDiagramSource")}
             onClick={() => copy(code)}
           >
-            {copied ? <IconCheck size={13} /> : <IconCopy size={13} />}
+            {copied ? <IconCheck size="var(--icon-meta)" /> : <IconCopy size="var(--icon-meta)" />}
           </TooltipButton>
         </div>
       </div>
       <div className="mermaid-block-body">
-        {copyError ? <div className="mermaid-block-error" role="alert">{copyError}</div> : null}
+        {copyError ? <UserErrorNotice error={copyError} /> : null}
         {error ? (
           <div className="mermaid-block-error" role="status">
-            <IconCircleAlert size={14} aria-hidden />
+            <IconCircleAlert size="var(--icon-meta)" aria-hidden />
             <span>{statusLabel}</span>
           </div>
         ) : null}
@@ -432,6 +445,8 @@ const MarkdownBlockContext = createContext({
   closedFence: false,
   renderDiagrams: true,
   originalRaw: "",
+  sourceOffset: 0,
+  reveal: undefined as StreamingReveal | undefined,
 });
 
 const MarkdownBaseDirContext = createContext("");
@@ -505,7 +520,7 @@ function InlineCode({
   className,
   children,
   ...rest
-}: ComponentProps<"code"> & { node?: unknown }) {
+}: ComponentProps<"code"> & SourcePositionProps & { node?: unknown }) {
   const { cwd: root } = useMarkdownActions();
   const baseDir = useContext(MarkdownBaseDirContext);
   const openFileRef = useOpenMarkdownFile();
@@ -582,7 +597,7 @@ function Anchor({
   */
   const onContextMenu = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (!href) return;
-    if (href.startsWith("artifact://")) { event.preventDefault(); return; }
+    if (/^(?:artifact|agent):\/\//.test(href)) { event.preventDefault(); return; }
     if (!/^https?:\/\//i.test(href)) {
       /*
         A file link names the same reference a chip does, so it offers the same
@@ -602,7 +617,7 @@ function Anchor({
           label: t("settings.linkContextMenuOpenExternal", {
             defaultValue: "Open in default browser",
           }),
-          icon: <IconExternal size={14} />,
+          icon: <IconExternal size="var(--icon-meta)" />,
           onSelect: () => openHttpUrl(target),
         },
         {
@@ -610,7 +625,7 @@ function Anchor({
           label: t("settings.linkContextMenuCopy", {
             defaultValue: "Copy link address",
           }),
-          icon: <IconCopy size={14} />,
+          icon: <IconCopy size="var(--icon-meta)" />,
           separatorBefore: true,
           onSelect: () => void copyLink(target),
         },
@@ -622,7 +637,7 @@ function Anchor({
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     if (!href) return;
-    if (href.startsWith("artifact://")) { onOpenSessionResource?.(safeDecodeUri(href)); return; }
+    if (/^(?:artifact|agent):\/\//.test(href)) { if (onOpenSessionResource) onOpenSessionResource(markdownSessionResourceReference(href)); else reportError('Native output requires an authorized conversation source.'); return; }
     if (/^https?:\/\//i.test(href)) {
       e.preventDefault();
       openHttpUrl(href);
@@ -721,7 +736,7 @@ function MarkdownImage({
         onClick={() => openFileRef(localRef, baseDir)}
         onContextMenu={onLocalContextMenu}
       >
-        <IconImage size={14} aria-hidden />
+        <IconImage size="var(--icon-meta)" aria-hidden />
         <span>{alt || localRef.split("/").pop()}</span>
         {error ? <span role="status">{error}</span> : null}
       </button>
@@ -772,7 +787,7 @@ function MediaBlock({ kind, src, children }: { kind: "audio" | "video"; src?: st
       {failed ? (
         <div role="status">
           {t("ompVisual.mediaPlaybackFailed")}
-          {url ? <button type="button" className="chat-image-chip" onClick={() => openExternal(url)}><IconExternal size={14} />{url}</button> : null}
+          {url ? <button type="button" className="chat-image-chip" onClick={() => openExternal(url)}><IconExternal size="var(--icon-meta)" />{url}</button> : null}
         </div>
       ) : null}
     </div>
@@ -784,6 +799,7 @@ function MediaSource({ src, type }: ComponentProps<"source"> & { node?: unknown 
 }
 
 const markdownComponents: Components = {
+  span: MarkdownSpan,
   pre: PreBlock,
   code: InlineCode,
   a: Anchor,
@@ -809,7 +825,7 @@ const staticRemarkPlugins = [
 // (single-line or mid-paragraph) as inline math instead of display math.
 const sanitizeSchema = {
   ...defaultSchema,
-  protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href || []), "artifact"] },
+  protocols: { ...defaultSchema.protocols, href: [...(defaultSchema.protocols?.href || []), "artifact", "agent"] },
   attributes: {
     ...defaultSchema.attributes,
     code: [["className", /^language-./, "math-inline", "math-display"]],
@@ -849,6 +865,8 @@ const Block = memo(function MarkdownBlock({
   renderDiagrams,
   workspaceRoot,
   baseDir,
+  reveal,
+  streaming,
 }: {
   raw: string;
   originalRaw: string;
@@ -856,16 +874,21 @@ const Block = memo(function MarkdownBlock({
   renderDiagrams: boolean;
   workspaceRoot?: string | null;
   baseDir?: string;
+  reveal?: StreamingReveal;
+  streaming: boolean;
 }) {
+  const { imageMarkers } = useMarkdownActions();
   const context = useMemo(
     () => ({
       closedFence: isClosedFencedCodeBlock(raw),
       renderDiagrams,
       originalRaw,
+      sourceOffset,
+      reveal,
     }),
-    [raw, originalRaw, renderDiagrams],
+    [raw, originalRaw, renderDiagrams, sourceOffset, reveal],
   );
-  const remarkPlugins = useMemo(
+  const remarkPlugins = useMemo<Options["remarkPlugins"]>(
     () => [
       ...staticRemarkPlugins,
       // `originalRaw` still carries the TeX `\[ … \]` delimiters so the
@@ -873,12 +896,13 @@ const Block = memo(function MarkdownBlock({
       // remark-math parses the pre-normalized `$$ … $$` form.
       remarkLatexBracketDisplay(originalRaw),
       remarkChatFileLinks(workspaceRoot, baseDir),
+      [remarkStreamingTail, { raw, streaming }],
     ],
-    [originalRaw, workspaceRoot, baseDir],
+    [originalRaw, workspaceRoot, baseDir, raw, streaming],
   );
   const positionedRehypePlugins = useMemo(
-    () => [...rehypePlugins!, [rehypeSourcePositions, { offset: sourceOffset }]] as Options["rehypePlugins"],
-    [sourceOffset],
+    () => [...rehypePlugins!, [rehypeSourcePositions, { offset: sourceOffset }], ...(imageMarkers ? [[rehypeInlineImageMarkers, { count: imageMarkers.count }]] : []), [rehypeStreamingText, { offset: sourceOffset, raw, reveal }]] as Options["rehypePlugins"],
+    [sourceOffset, raw, reveal, imageMarkers],
   );
   return (
     <MarkdownBlockContext.Provider value={context}>
@@ -886,7 +910,7 @@ const Block = memo(function MarkdownBlock({
         remarkPlugins={remarkPlugins}
         rehypePlugins={positionedRehypePlugins}
         components={markdownComponents}
-        urlTransform={(url, key) => key === "href" && url.startsWith("artifact://") ? url : defaultUrlTransform(url)}
+        urlTransform={(url, key) => key === "href" && /^(?:artifact|agent):\/\//.test(url) ? url : defaultUrlTransform(url)}
       >
         {raw}
       </ReactMarkdown>
@@ -901,20 +925,26 @@ export const Markdown = memo(function Markdown({
   cwd = "",
   onOpenFile,
   onOpenSessionResource,
+  reveal,
+  imageMarkers,
+  streaming = false,
 }: {
   source: string;
   renderDiagrams?: boolean;
+  reveal?: StreamingReveal;
+  streaming?: boolean;
   /** Workspace-relative directory of the source file, for `./` / `../` links. */
   baseDir?: string;
   /** Absolute workspace directory for host-contained file/image reads. */
   cwd?: string;
   onOpenFile?: (path: string) => void;
   onOpenSessionResource?: (reference: string) => void;
+  imageMarkers?: MarkdownImageMarkers;
 }) {
   const workspaceRoot = cwd;
-  const [error, setError] = useState<string | null>(null);
-  const reportError = useCallback((cause: unknown) => setError(String(cause)), []);
-  const actions = useMemo(() => ({ cwd, onOpenFile, onOpenSessionResource, reportError }), [cwd, onOpenFile, onOpenSessionResource, reportError]);
+  const [error, setError] = useState<Error | string | null>(null);
+  const reportError = useCallback((cause: unknown) => setError(preserveUserError(cause)), []);
+  const actions = useMemo(() => ({ cwd, onOpenFile, onOpenSessionResource, reportError, imageMarkers }), [cwd, onOpenFile, onOpenSessionResource, reportError, imageMarkers]);
 
   /*
     One menu for every file reference in this tree. Its blocks are memoized and
@@ -939,8 +969,8 @@ export const Markdown = memo(function Markdown({
         else void window.ompDesktop.revealFile(cwd, path).catch(reportError);
       } },
       { id: "reveal", label: t("chat.revealFileInFolder"), onSelect: () => { void window.ompDesktop.revealFile(cwd, path).catch(reportError); } },
-      ...(fullPath ? [{ id: "copy-full-path", label: t("chat.copyFullPath"), icon: <IconCopy size={14} />, separatorBefore: true, onSelect: () => { void window.ompDesktop.copyText(fullPath).catch(reportError); } }] : []),
-      { id: "copy-relative-path", label: t("chat.copyRelativePath"), icon: <IconCopy size={14} />, onSelect: () => { void window.ompDesktop.copyText(path).catch(reportError); } },
+      ...(fullPath ? [{ id: "copy-full-path", label: t("chat.copyFullPath"), icon: <IconCopy size="var(--icon-meta)" />, separatorBefore: true, onSelect: () => { void window.ompDesktop.copyText(fullPath).catch(reportError); } }] : []),
+      { id: "copy-relative-path", label: t("chat.copyRelativePath"), icon: <IconCopy size="var(--icon-meta)" />, onSelect: () => { void window.ompDesktop.copyText(path).catch(reportError); } },
     ] });
   }, [cwd, onOpenFile, openFileMenu, reportError, t]);
   // Keep normalization length-preserving so source anchors and the bracket
@@ -969,12 +999,14 @@ export const Markdown = memo(function Markdown({
               renderDiagrams={renderDiagrams}
               workspaceRoot={workspaceRoot}
               baseDir={baseDir}
+              reveal={reveal}
+              streaming={streaming && i === blocks.length - 1}
             />
           );
         })}
       </MarkdownBaseDirContext.Provider>
       <ContextMenu state={fileMenu} onClose={closeFileMenu} />
-      {error ? <div className="markdown-action-error" role="alert">{error}<button type="button" onClick={() => setError(null)}>{t("common.close", { defaultValue: "Close" })}</button></div> : null}
+      {error ? <div className="markdown-action-error"><UserErrorNotice error={error} /><button type="button" onClick={() => setError(null)}>{t("common.close", { defaultValue: "Close" })}</button></div> : null}
     </MarkdownFileMenuContext.Provider>
     </MarkdownActionsContext.Provider>
   );
