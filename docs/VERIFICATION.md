@@ -1,8 +1,14 @@
 # OMP-Desktop 验证记录
 
-## v1.0.0 Apple Silicon DMG 发布验收 — 待完成
+## v1.0.0 Apple Silicon DMG 发布验收
 
-当前发布目标为 v1.0.0、macOS Apple Silicon（arm64）、未签名且未公证的 DMG。发布检查、最终产物版本与架构、DMG SHA-256，以及挂载后启动结果尚待编排者实际执行并记录；本节不宣称这些检查已通过。
+本节仅记录编排者对本次发布实际执行并观察的检查，不把历史验收或未覆盖的平台、服务商场景算作本次通过。
+
+- **构建检查：** pnpm 10.34.5 冻结锁文件安装成功；node/web 两个 TypeScript 配置通过；`pnpm dist:mac` 的生产构建及 electron-builder DMG 打包成功。既有 CSS `::highlight` 与大 chunk 警告仍在。本节不宣称全量测试已通过。
+- **最终 DMG 身份：** `release/OMP-Desktop-1.0.0-mac-arm64.dmg`，129,557,200 字节；SHA-256 为 `ada0e0e0f214145605f056581561fceb12c09b1f912cbf76a069524d901cf3e1`。`hdiutil verify` 返回 VALID；只读挂载后包含 `OMP-Desktop.app` 与 Applications 链接。挂载应用的 Info.plist 版本为 1.0.0，可执行文件为 Mach-O arm64；`LSMinimumSystemVersion` 声明为 12.0，但未在 macOS 12 上实测。
+- **从 DMG 安装后的实际运行：** 使用 `ditto` 将挂载的实际应用复制到隔离临时安装目录，启动其 `Contents/MacOS` 可执行文件；renderer URL 来自该安装的 `app.asar`。实际外部 omp 配合回环地址上的本地 provider 完成 `E2E_SIMPLE`，界面显示 `Local answer`、`The isolated workspace is ready`、`E2E_ANSWER_COMPLETE`，无警报。截图 `installed-send.png` 保留于仓库外；该结果不是商业服务商、OAuth 或所有功能的验证。
+- **沙箱观察与范围：** Electron 原生沙箱保持启用，未传入 `--no-sandbox`。外层 macOS 测试策略最初阻止嵌套 Chromium 沙箱；调整测试策略，仅允许包内 helper 可执行文件初始化自身沙箱后完成上述运行，父进程与 omp 仍保持隔离。这不构成其他安装环境的沙箱兼容性保证。
+- **包内资源与签名边界：** 实际观察到包内 LICENSE、licenses、THIRD_PARTY_NOTICES 与 presence 资源。codesign 报告链接器 ad-hoc 签名，无 TeamIdentifier、无 sealed resources；本发布未做 Developer ID 签名或公证，也未验证下载隔离属性下的 Gatekeeper 放行。
 
 下方带日期的记录均保留其当时已观察的结果与限制，其中的 `app.asar` 哈希仅标识历史包，不是本次 v1.0.0 DMG 的哈希或验收证明。
 

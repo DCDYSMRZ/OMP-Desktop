@@ -25,7 +25,7 @@
 
 ### 发布前的历史验证
 
-以下 2026-09-30 / 2026-10-01 的观察仅对应各阶段源码和旧目录包，不证明 v1.0.0 DMG 已通过相同检查。新 DMG 的构建、校验和与挂载启动证据待实际执行后记录于 [验收记录](docs/VERIFICATION.md)。
+以下 2026-09-30 / 2026-10-01 的观察仅对应各阶段源码和旧目录包，不证明 v1.0.0 DMG 已通过相同检查。2026-10-07 的新 DMG 已完成校验、只读挂载及复制后应用的隔离启动，并通过真实外部 omp 与本机模型 fixture 完成一条消息；具体构建、产物身份与限定范围见 [验收记录](docs/VERIFICATION.md)，不代表全场景重放。
 
 2026-10-01 的滚动与输入修正见 [历史阶段滚动抖动与输入内层黑框验收](docs/VERIFICATION.md#当前验收滚动抖动与输入内层黑框修正--2026-10-01)：按每次前插提交恢复文字锚点，明确用户输入和导航生命周期防止迟到定位抢走阅读位置；主/子列表及同文件刷新保留状态，历史树同源刷新原子替换窗口。文本字段统一单一表面，移除内层黑框而保留键盘焦点。当时记录了真实历史阶段测量、thinking-live、find-immediate、live-follow、最终 minimap-follow、子面板/审阅/文件刷新及多类输入的实际观察；当时目录包的历史搜索键盘焦点也已实测。仅证明所列场景，不宣称全控件、全时序或全部场景已在包内重放。
 
@@ -108,7 +108,7 @@ npx --yes pnpm@10.34.5 run dist:mac
 
 已安装 pnpm 10.34.5 时可使用 `pnpm run dist:mac`。脚本先执行现有 `pnpm build`，再调用项目锁定的 electron-builder，以 `--mac dmg --arm64 --publish never` 生成 `release/OMP-Desktop-1.0.0-mac-arm64.dmg`，并关闭签名身份自动发现。确定的文件名不表示每次构建的字节或校验和相同。此命令不自动发布到 GitHub，不使用发布凭据；保持未签名、未公证，不生成 Intel/universal 发行包。
 
-对应源码使用 [v1.0.0 标签](https://github.com/DCDYSMRZ/OMP-Desktop/tree/v1.0.0)，保留锁文件、构建配置与许可材料；本地修改后可用相同构建步骤重新生成应用。实际 DMG 校验和与启动范围以 [验收记录](docs/VERIFICATION.md) 中该产物的观察为准，目前待发布验证补充，不能使用下方旧目录包的哈希代替。
+对应源码使用 [v1.0.0 标签](https://github.com/DCDYSMRZ/OMP-Desktop/tree/v1.0.0)，保留锁文件、构建配置与许可材料；本地修改后可用相同构建步骤重新生成应用。2026-10-07 已完成 pnpm 10.34.5 冻结锁文件安装、两个 TypeScript 配置检查与生产 `dist:mac` 构建；DMG 通过 `hdiutil verify` 和只读挂载，复制出的应用确认版本 1.0.0、arm64，在未使用 `--no-sandbox` 的隔离环境中启动，并通过真实外部 omp 与本机 loopback 模型 fixture 完成一条消息、收到预期答复且无警报。该 DMG 为 **129,557,200 字节**，SHA-256 为 `ada0e0e0f214145605f056581561fceb12c09b1f912cbf76a069524d901cf3e1`。详细证据及限制见 [验收记录](docs/VERIFICATION.md)；这不是全部功能、商业服务商/OAuth、下载隔离/Gatekeeper 批准流程或 Intel 的验收。产物仍未经过 Developer ID 签名或 Apple 公证，链接器 ad-hoc 签名不构成可信发行签名；下方旧目录包哈希不能代替本次 DMG 校验和。
 
 ### 未签名本地目录包
 

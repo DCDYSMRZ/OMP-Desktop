@@ -6,7 +6,7 @@
 - 新增 `pnpm run dist:mac`：先运行现有构建，再由锁定的 electron-builder 生成 arm64 DMG，固定产物命名且 `--publish never`，不自动上传、不增加自动更新器。原 `pnpm run pack` 继续用于本地目录包。
 - 保持未签名、未公证；README 与使用说明补充逐应用的 macOS「隐私与安全性 → 仍要打开」流程，不建议关闭 Gatekeeper 或全局移除隔离保护。
 - 打包应用自带 Electron，不要求系统 Node/pnpm；omp 仍须独立安装并完成真实模型/认证配置，不捆绑 omp、用户凭据或会话。源码构建前提、许可与上游署名保留。
-- 本次发行产物的构建、校验和与挂载启动证据待实际验证后记入 [VERIFICATION.md](docs/VERIFICATION.md)。下方旧检查、截图和目录包哈希仅对应历史阶段，不作为新 DMG 的验收证明。
+- 2026-10-07 已完成 pnpm 10.34.5 冻结锁文件安装、两个 TypeScript 配置检查、生产 DMG 构建、`hdiutil verify` 与只读挂载；从 DMG 复制的 1.0.0 arm64 应用在保留原生沙箱的隔离环境中启动，使用真实外部 omp 与本机 loopback 模型 fixture 完成一条消息、获得预期答复且无警报。产物校验和与具体范围见 [VERIFICATION.md](docs/VERIFICATION.md)。未验收下载隔离/Gatekeeper 批准流程、商业服务商/OAuth、Intel 或全功能矩阵；下方旧检查、截图和目录包哈希仍仅对应历史阶段。
 
 ## 发布前开发记录（2026-09-28 至 2026-10-01）
 
