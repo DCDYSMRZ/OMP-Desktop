@@ -147,3 +147,7 @@ macOS 对未签名应用可能显示安全提示。仅对核对来源并决定�
 前端及既有布局/交互基础派生自 [vastsa/PI-Desktop](https://github.com/vastsa/PI-Desktop)，本次语义呈现不改变其 **GNU LGPL v3.0** 许可边界（本项目使用保守标识 `LGPL-3.0-only`，不推定额外的 or-later 授权）。部分进程发现/传输算法改编自 [FaqFirebase/pi-desktop](https://github.com/FaqFirebase/pi-desktop)，保留 **Apache-2.0** 与原作者署名。这不是将主项目重新许可为 Apache/MIT。
 
 见 [LICENSE](LICENSE)、[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 和 [licenses/](licenses/)。发行二进制时还需按适用许可提供对应源码、构建/重新组合材料及各依赖的许可通知；本地打包成功不等于已完成对外发行合规。项目按适用许可“按原样”提供，不附带保证。
+
+## 友情链接
+
+- [LINUX DO 社区](https://linux.do/)
